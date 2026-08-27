@@ -1,0 +1,32 @@
+// https://mermaid.live/edit#pako:eNqNVNtu2kAQ_ZXRPlHJAUyAGEtN5RqUogY3ws5LhRRt7YFsa-_S3TVKiviYqg_9kPxY1xcs56r6yd4558yZy3pPYpEgcYnCnznyGKeMbiTNVhzMQ2MtJHh-BFTBYrb4OFv2vOliHlThLZWaxWxLuYbILzARVT98wbUUaYryBVR4RIUodyzG55CrL5cF5kqK7xhrL45RqSuRsvj-BbnlUW6JW6GYcfsCyrssYV6eMH0pNm9Bg9JfIDRbs5hqJvirPoPlU-hbwtcV_FqhfI1SkUyzT87PI981jQgj6NEt622rXqjeniWHnjblKtiDZjpFC7rdrmWkFdtwxHnyAQ6VUOQXOqELsWRUdmqNeWJBooVVjXaevKvBoQGbzruwodL4ZXKB2TcppqKcgxadGm9BI9SmRksXFN1hpzDXDpje1xEjYAqG9xB54ecbfznzotm09mFBzavXLtWtioDxtZAZTQR0-MMfATxPRZ3jP703Ws_tv-XUC8P5RTCb3fifvOCicNsqryEGpse8nql8lKustBaZtlJXOo8sBKXS0QFvrUgbtDx5kq802mHPlK4bqdxs3M0j-B7aHtsh0-tDrYSpQlCYgUS1FVw9_N5h2koiNILYoYRiw4pqyjVLaMnJVU4lM0uWio0ZF_LbPKNNpoe_xRARaHEfhWHVGXlynL9pa30HqqtdOsBmrYth-ZELg74NvkSqMSEW2UiWEFfLHC2SodmX4pPsC9aK6FvMcEVc85rgmuapXpEVPxiauZ1fhciOTCnyzS1x19TUb5F8mxj1-pfYnEpjFaUvcq6Jezq2nVKFuHtyR9yTYX_QPTuzh6NTZ3Q2HNgTi9yb47HTte2J4zin_dF4POyPDxb5VSa2u8NRfzy0ndHQHkz6E2dw-Adey9IZ
+
+sequenceDiagram
+    actor ACT as MEMBER/ADMIN
+    participant TC as TaskController
+    participant TS as TaskService
+    participant POL as ProjectAccessPolicy
+    participant TR as TaskRepository
+    participant ALR as AuditLogRepository
+    participant NS as NotificationService
+    participant NR as NotificationRepository
+    participant UNR as UserNotificationRepository
+
+    ACT->>TC: POST /api/projects/{id}/tasks { title, ..., assigneeId? }
+    TC->>TS: criar(projectId, dto, actorId)
+    TS->>POL: garantirMembroDoProjeto(actorId, projectId)
+    TS->>TR: save(task)
+    TS->>ALR: save(action = TASK_CREATED, actor, task)
+
+    alt assigneeId informado (não nulo)
+        TS->>POL: garantirMembroDoProjeto(assigneeId, projectId)
+        TS->>ALR: save(action = ASSIGNEE_CHANGED, task)
+        TS->>NS: notificar(assigneeId, TASK_ASSIGNED, projectId, taskId)
+        NS->>NR: save(notification)
+        NR-->>NS: notification (id)
+        NS->>UNR: save(user_notification { assigneeId, notificationId })
+    else sem responsável
+        Note over TS: task criada sem usuario, logo nenhuma notificação e auditoria
+    end
+
+    TS-->>TC: TaskResponse
+    TC-->>ACT: 201 Created

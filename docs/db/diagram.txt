@@ -1,0 +1,133 @@
+/*
+    ** Diagrama proposto para servico: task manager
+    ** Url publica: https://dbdiagram.io/d/taskmanager-diagram-6a9063efa1687f63dbec535e
+*/
+
+// status das tasks
+Enum task_status {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+// prioridade das tasks
+Enum priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// perfils de usuario
+Enum member_role {
+  ADMIN
+  MEMBER
+}
+
+// tipos de logs tasks
+Enum audit_action {
+  TASK_CREATED
+  TASK_UPDATED
+  STATUS_CHANGED
+  PRIORITY_CHANGED
+  ASSIGNEE_CHANGED
+  DUE_DATE_CHANGED
+  TASK_DELETED
+}
+
+// tipos de notificacoes aos usuarios
+Enum notification_type {
+  TASK_ASSIGNED
+  PROJECT_ADDED
+}
+
+Table users {
+  id uuid [pk, default: `gen_random_uuid()`]
+  name varchar(100) [not null]
+  email varchar(150) [not null, unique]
+  password varchar(255) [not null]
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+}
+
+Table projects {
+  id uuid [pk, default: `gen_random_uuid()`]
+  name varchar(150) [not null]
+  description text
+  owner_id uuid [not null, ref: > users.id]
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+}
+
+Table project_members {
+  id uuid [pk, default: `gen_random_uuid()`]
+  project_id uuid [not null, ref: > projects.id]
+  user_id uuid [not null, ref: > users.id]
+  role member_role [not null, default: 'MEMBER']
+  joined_at timestamp [not null, default: `now()`]
+
+  indexes {
+    (project_id, user_id) [unique]
+  }
+}
+
+Table tasks {
+  id uuid [pk, default: `gen_random_uuid()`]
+  project_id uuid [not null, ref: > projects.id]
+  title varchar(200) [not null]
+  description text
+  status task_status [not null, default: 'TODO']
+  priority priority [not null, default: 'MEDIUM']
+
+  user_id uuid [ref: > users.id]
+  due_date timestamp
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+
+  indexes {
+    (project_id, status)
+    (project_id, user_id, status)
+    (due_date)
+  }
+}
+
+Table task_logs {
+  id uuid [pk, default: `gen_random_uuid()`]
+  project_id uuid [not null, ref: > projects.id]
+  task_id uuid [not null, ref: > tasks.id]
+  actor_id uuid [not null, ref: > users.id]
+  action audit_action [not null]
+  from_status task_status
+  to_status task_status
+  created_at timestamp [not null, default: `now()`]
+
+  indexes {
+    (task_id, created_at)
+    (project_id, created_at)
+  }
+}
+
+Table notifications {
+  id uuid [pk, default: `gen_random_uuid()`]
+  type notification_type [not null]
+  message text [not null]
+  project_id uuid [ref: > projects.id]
+  task_id uuid [ref: > tasks.id]
+  created_by uuid [not null, ref: > users.id]
+  created_at timestamp [not null, default: `now()`]
+
+  indexes {
+    (created_at)
+  }
+}
+
+Table user_notifications {
+  user_id uuid [not null, ref: > users.id]
+  notification_id uuid [not null, ref: > notifications.id]
+  read_at timestamp
+
+  indexes {
+    (user_id, notification_id) [pk]
+    (user_id, read_at)
+  }
+}

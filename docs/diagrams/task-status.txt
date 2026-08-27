@@ -1,0 +1,46 @@
+// https://mermaid.live/edit#pako:eNqtVV2P2jgU_StXfgIpHZjwMRCJWaUBtdHOEETSVlohVd7YgHeTOGsbulPE0_6Sqk997k_gj9X5gsxMuu1D80K499xzj499nQMKOaHIQpL-s6NJSKcMbwSOVwnoB4eKC7CdALCE-9n9y9myY0_v3XmRTrFQLGQpThQEToYJsPzb4YkSPIqoaED5FcqnYs9C-hyy8O4yzELwv2io7DCkUi54xMKHBrplRbekKZdMq21A2Xc5zN4Rpu74pg4twHqBL25vA8eChR04r6GDU9ZJCwGyc2Dk2FG6h37NflxyhANIhdVOwgTm3lsPjgVR4GQ8vgU6hyP2EQs_h7VKMpcYUFAYkPA9L7JG4bNL2iWLr1m0DRZssNALYOKexn8KPuW5KYq3SrwBZ956abC0YM0S8vLBJa2iXZVevigFZmFoFYuwM7EZF-OCqQctR0q2SSit5C4au2iWvV4kweIxCCaTi67KYhypouf89J8HKRUqO2yAeQFVHAgGwRUu4GWXclfUVvAPEvrdfi3rZFm9c9YlTiNJiy4NDS6lmZbayvUeTr35DGhtS3Qs8KbepaZZkGlCK69NTp857HmkMOC8sv2ktKbWNC-5XPGjtqWUajN0xFm6gevYd8_EPDkkNolZ8hNnpG5DMeD5npy-QD7aQBos-38LKoUgT19LkjUNt7jdQPAdI3IzElJzJjmfnezhqXrskzt_v1h6r5Yz328wJhuBkO_08H_YUkEvHujK3wAnpHbGzyH5Y-7L_OijGj33Mw_D7QQG0HrnLiBiMVOQao9LS9s_62leSYFQTVXTk3MJKlOeyNOnPY1-ocdn5yTe0_zi0B7GNdvbT7D6Yi3B-hwxnmjr_MAO3vjvndf2_NVsasBaaIYJPLpo9LBPvstaWlHc6fkyaePQm90ueL-Xc58QZKCNYARZSuyogWIqYpz9RYcMskJqS2O6QpZ-JXSNd5FaoVVy1GX6E_EH53FVKfhus0XWGuvJNNAuJVhV38RzVOiGVDjZ-ULWcDA0cxZkHdC_yLoeja96o5vxaGCa4_7Y1MkHHb25vhp0rweDYW887I_6vdHRQB_zvt2r0WDc698Me93rbn_QuxkevwEbakj7
+
+sequenceDiagram
+    actor ACT as MEMBER/ADMIN
+    participant TC as TaskController
+    participant TS as TaskService
+    participant POL as ProjectAccessPolicy
+    participant TR as TaskRepository
+    participant ALR as AuditLogRepository
+
+    ACT->>TC: PATCH /api/projects/{id}/tasks/{taskId} { status = NOVO }
+    TC->>TS: atualizarStatus(projectId, taskId, novoStatus, actorId)
+    TS->>POL: garantirMembroDoProjeto(actorId, projectId)
+    TS->>TR: findById(taskId)
+    TR-->>TS: task (statusAtual, priority, assigneeId, taskProjectId)
+    TS->>TS: validar taskProjectId == projectId
+
+    alt task NÃO pertence ao projeto da rota
+        TS-->>TC: throws 404
+        TC-->>ACT: 404
+    else task pertence ao projeto
+        alt statusAtual = DONE e novoStatus = TODO
+            TS-->>TC: throws 422 (DONE não volta a TODO)
+            TC-->>ACT: 422
+        else novoStatus = DONE e priority = CRITICAL
+            TS->>POL: garantirAdminDoProjeto(actorId, projectId)
+            alt actor NÃO é ADMIN do projeto
+                TS-->>TC: throws 422 (CRITICAL só ADMIN fecha)
+                TC-->>ACT: 422
+            end
+        end
+
+        opt novoStatus = IN_PROGRESS
+            TS->>TR: count where projectId = ? and assigneeId = ? and status = IN_PROGRESS
+            TR-->>TS: total
+            alt total >= 5 (WIP limit por projeto)
+                TS-->>TC: throws 422 (limite de 5 IN_PROGRESS por responsável)
+                TC-->>ACT: 422
+            end
+        end
+
+        TS->>TR: save(task com novoStatus)
+        TS->>ALR: save(action = STATUS_CHANGED, from = statusAtual, to = novoStatus)
+        TS-->>TC: TaskResponse
+        TC-->>ACT: 200 OK
+    end

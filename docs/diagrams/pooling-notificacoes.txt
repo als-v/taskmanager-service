@@ -1,0 +1,29 @@
+// https://mermaid.live/edit#pako:eNptVF1v2jAU_StXfqIaLZTyGa1MHYMNrcomKC8TUmXiC_WW2JntdO0QP2baw35I_9iuIQUC-Cl2zjn33nOcLFmkBbKAWfyZoYrwg-QLw5OpAlo8ctrAoA_cwsBo5VAJKGU2e_ljpIZYL7jQZxtsyo2TkUy5chD2PCPUTs5lxJ3Uqkdko-MYzQn0-BA9RvMoIzyGTkIPnVg0-_ARptpKavX5hPjoUHwfvcHHWqfAIeKCQw0SqTKnLZQsuiGNbB55nM_o16B_3u2GvQA-9u-gwlNZUXvi9l2mDHJx7UyGO1LY86RxALPMRtyEXN9KwS1ZiWYo9tTDMQEnYQBzqcT758n6_Y0SI9K8cUMbZnF8zJqEXn4UwHctFRT6gZI2AhXlBCllGVFzDsU9dyDQRvuVR-d56ViqB_JMIPhC90W5N1v5l38vf3Whh3zGW2nd233Hu4X5cvuOUCO0KVXAbsE2Qg_6AdSqVfjy-TWw9d2MHeATiWACijqhtsnR3fttVp5OwBmC09w6P8KMiwX6ASOdKXeC4xv8enPX-3Qi4cpSilXFhwwlroHPjDRnRY1t3Ak3FLfPuiRFGY6CK0SepYKyAa_s87kmp3-VDsA7l_WPI5m88VevDjrKrYi0mkuT0IXYIeiz3mzWD6zMFkYKFvg7XGYJEtpv2dKDpsw9YIJTFtCjwDnPYjdlU7UiGn1x37ROXplGZ4sHFsx5bGm3GS__v2xPDZVE0_M5sODyqrYWYcGSPbGg2b6oVdutWr3TajTajU69zJ5Z0Li8aLZb9U7tqlVtVhv11qrMfq-rVi_8Oa1mq9G-6rRbndV_g6CCbQ
+
+sequenceDiagram
+    actor FE as Frontend (usuário logado)
+    participant NC as NotificationController
+    participant NS as NotificationService
+    participant UN as UserNotificationRepository
+    participant NR as NotificationRepository
+
+    loop a cada 2 minutos (setInterval)
+        FE->>NC: GET /api/notifications?unread=true
+        NC->>NS: buscarNaoLidas(userId)
+        NS->>UN: findByUserIdAndReadAtIsNull(userId)
+        UN->>NR: join notifications (ordenado por created_at desc)
+        NR-->>UN: linhas de user_notifications + notificação
+        UN-->>NS: List<Notification>
+        NS-->>NC: List<NotificationResponse>
+        NC-->>FE: 200 OK
+
+        alt existem não lidas
+            FE->>FE: exibe toasts + badge de count
+            FE->>NC: PATCH /api/notifications/{id}/read (ao abrir)
+            NC->>NS: marcarLida(id, userId)
+            NS->>UN: update read_at = now()
+            UN-->>NS: ok
+            NS-->>NC: 200 OK
+            NC-->>FE: confirmado
+        end
+    end

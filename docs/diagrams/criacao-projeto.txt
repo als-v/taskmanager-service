@@ -1,0 +1,17 @@
+// https://mermaid.live/edit#pako:eNptks-OmzAQh19l5FMqsVlgCX8sdaWKveRAi0J7qZAqF89m3Qab2mbbbcTD9Fn6YjUB0rQKJ8b-fp89A0fSKI6EEoPfepQNPgi216ytJbiHNVZpePNQADPwwfS_f2mhgPUWpRUN42rCOqZdKTomLZT5yJZafcHG5kparQ4H1FfA6gKsUD-LBq9Quwtqh50ywl3p5QpYXJIFtp9RX_JTwrVyc39f5hTKd9V7uGWduO2miIEjSNaiBxxNo0VnhZIwTLkyH2MVBbfB9Ipb5U3D2fJXM1GNxI6CYc-4mp3QqBbUd4n6k-Dw-v_I7ma2LvjKUXvUbrD_WItF257achedA1vuQW_QKf_KPXATR1e7XrdvYVhMxfk09fUsX4axzNd0Sho89-y2nYVC6AeQa2QWOfHIXgtOqNU9eqRF3bKxJMcxVRP7hC3WhLpXjo-sP9ia1HJwMfeZPirVLkmt-v0ToY_sYFzVd9zZ55_vvKpRctS56qUlNNv4JwmhR_KD0E20zpK7LAyTMIuyMMg88kJoEGbrTZJEfpLexVkQ-fHgkZ-nY4O1H4dxHIVplG7S1A-S4Q8awfVT
+
+sequenceDiagram
+    actor ADM as Usuário autenticado
+    participant PC as ProjectController
+    participant PS as ProjectService
+    participant PR as ProjectRepository
+    participant PMR as ProjectMemberRepository
+
+    ADM->>PC: POST /api/projects { name, description }
+    PC->>PS: criar(dto, actorId)
+    PS->>PR: save(project com owner_id = actorId)
+    PR-->>PS: project (id gerado)
+    PS->>PMR: save(member { projectId, userId = actorId, role = ADMIN })
+    PMR-->>PS: ok
+    PS-->>PC: ProjectResponse
+    PC-->>ADM: 201 Created

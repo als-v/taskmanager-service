@@ -1,0 +1,29 @@
+// https://mermaid.live/edit#pako:eNp9lN9u2jAUxl_F8hVIARL-LeSiEgqdxAYhgnIzIVVufEq9ETuznW4t4mpPs-foi83Ony50dNwAh9_3nXM-mxxxIijgACv4ngNPYMbIXpJ0x5F5kUQLiaazJSLKvs0jRAXKpPgKWpRIRqRmCcsI1ygOLRfbnxMdCq6lOBxAXgA3DXAD8pElcIFaLRrYNElAqVgcWPJ0gV2uG-wS0juQa8iEYmaDC3xUTBAJze5ZQjQT_N0xovVb9H_G2xLfKpDvSUqRibNzdRWHgdlzc4N6JGO9rBxf9Y6MnnppsYVCR5Qbtzl1kMkT0KnUx6GVbwJEqOktOJF2aylalYnlqRZOeYhz2q5kGytbLQK0J9IMzOSUpozPRFyeaqvCHfTq065HJgddXYno5dcKvfx-504UfVaLTrWffpDih0JDd4A-CnnHKAXeAEPLGaPAEmUdDgoQyU0n9kxo07WYfrkOkCKP0CoTMgE1dj7Pqt3QLtedKjLx7Y1lZIq8Oi7Zqi3i9erTdXhzO53NrmfngdTqqFDX8_DGiTehonGzhwVQi_3jtH21sjPcnuF_r0GzPKfnS27q1Ov_gMoEV3Ax777rotXnKnJOsYP3klEcaJmDg1OQKbFf8dEiO6wfIIUdDsxHCvckP-gd3vGTkZmb_0WItFZKke8fcHBPzDE6OM8o0fVz5bUqTUOQoci5xoE_GRYmODjinzjo-KOuPxn0PX8yGXpDd9x38JMpfxh2vcHYdb2RP57Y-snBz0Vfrzvy_NFo0Pc9dzJ2ByP_9AeAHIxv
+
+sequenceDiagram
+    actor ADM as ADMIN do projeto
+    participant PC as ProjectController
+    participant PS as ProjectService
+    participant POL as ProjectAccessPolicy
+    participant PMR as ProjectMemberRepository
+    participant NS as NotificationService
+    participant NR as NotificationRepository
+    participant UNR as UserNotificationRepository
+
+    ADM->>PC: POST /api/projects/{id}/members { userId, role }
+    PC->>PS: adicionarMembro(projectId, dto, actorId)
+    PS->>POL: garantirAdminDoProjeto(actorId, projectId)
+
+    alt actor NÃO é ADMIN do projeto
+        POL-->>PC: throws 403 Forbidden
+        PC-->>ADM: 403
+    else autorizado
+        PS->>PMR: save(member { projectId, userId, role })
+        PMR-->>PS: ok
+        PS->>NS: notificar(userId, PROJECT_ADDED, projectId)
+        NS->>NR: save(notification)
+        NR-->>NS: notification (id)
+        NS->>UNR: save(user_notification { userId, notificationId })
+        PS-->>PC: MemberResponse
+        PC-->>ADM: 200 OK
+    end
