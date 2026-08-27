@@ -1,0 +1,13 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:taskmanager}
+    driver-class-name: org.postgresql.Driver
+    username: ${POSTGRES_USER:taskmanager}
+    password: ${POSTGRES_PASSWORD:taskmanager}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
