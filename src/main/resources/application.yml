@@ -1,6 +1,8 @@
 spring:
   application:
     name: taskmanager
+  jackson:
+    property-naming-strategy: SNAKE_CASE
   flyway:
     enabled: true
   jpa:

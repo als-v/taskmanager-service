@@ -1,6 +1,5 @@
 package com.elotech.taskmanager.common.error;
 
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -29,16 +28,23 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiProblem> handleValidation(MethodArgumentNotValidException ex, WebRequest request) {
         List<ApiProblem.ValidationError> errors = ex.getBindingResult().getFieldErrors().stream()
-                .map(fieldError -> new ApiProblem.ValidationError(
-                        fieldError.getField(),
-                        "error.validation." + fieldError.getField() + "." + fieldError.getCode(),
-                        fieldError.getDefaultMessage()))
+                .map(fieldError -> {
+                    String field = toSnakeCase(fieldError.getField());
+                    return new ApiProblem.ValidationError(
+                            field,
+                            "error.validation." + field + "." + fieldError.getCode(),
+                            fieldError.getDefaultMessage());
+                })
                 .toList();
 
         ApiProblem problem = ApiProblem.of(HttpStatus.BAD_REQUEST, "error.validation.failed",
                 "One or more fields are invalid", uri(request));
         problem.setErrors(errors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
+    }
+
+    private String toSnakeCase(String camelCase) {
+        return camelCase.replaceAll("([a-z0-9])([A-Z])", "$1_$2").toLowerCase();
     }
 
     @ExceptionHandler(Exception.class)
