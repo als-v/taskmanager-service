@@ -10,7 +10,6 @@ CREATE TABLE task_logs (
 
     CONSTRAINT pk_task_logs PRIMARY KEY (id),
     CONSTRAINT fk_task_logs_project FOREIGN KEY (project_id) REFERENCES projects (id),
-    CONSTRAINT fk_task_logs_task FOREIGN KEY (task_id) REFERENCES tasks (id),
     CONSTRAINT fk_task_logs_actor FOREIGN KEY (actor_id) REFERENCES users (id)
 );
 

@@ -9,7 +9,6 @@ CREATE TABLE notifications (
 
     CONSTRAINT pk_notifications PRIMARY KEY (id),
     CONSTRAINT fk_notifications_project FOREIGN KEY (project_id) REFERENCES projects (id),
-    CONSTRAINT fk_notifications_task FOREIGN KEY (task_id) REFERENCES tasks (id),
     CONSTRAINT fk_notifications_created_by FOREIGN KEY (created_by) REFERENCES users (id)
 );
 
