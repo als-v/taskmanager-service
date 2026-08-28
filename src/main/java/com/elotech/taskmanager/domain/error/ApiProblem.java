@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 
+import java.io.Serializable;
 import java.net.URI;
 import java.util.List;
 
@@ -49,7 +50,9 @@ public class ApiProblem extends ProblemDetail {
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class ValidationError {
+    public static class ValidationError implements Serializable {
+
+        private static final long serialVersionUID = 1L;
 
         private final String field;
         private final String code;

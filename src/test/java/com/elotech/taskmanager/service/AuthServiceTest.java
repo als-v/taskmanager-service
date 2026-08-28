@@ -2,6 +2,7 @@ package com.elotech.taskmanager.service;
 
 import com.elotech.taskmanager.domain.error.ApiException;
 import com.elotech.taskmanager.domain.error.ConflictException;
+import com.elotech.taskmanager.domain.error.ErrorMessages;
 import com.elotech.taskmanager.domain.error.UnauthorizedException;
 import com.elotech.taskmanager.domain.entity.User;
 import com.elotech.taskmanager.repository.UserRepository;
@@ -107,7 +108,7 @@ class AuthServiceTest {
         assertThatThrownBy(() -> authService.signUp(request))
                 .isInstanceOf(ConflictException.class)
                 .extracting(ex -> ((ApiException) ex).getCode())
-                .isEqualTo("error.auth.email-in-use");
+                .isEqualTo(ErrorMessages.AUTH_EMAIL_IN_USE_CODE);
 
         verify(userRepository, never()).save(any());
     }
@@ -138,7 +139,7 @@ class AuthServiceTest {
         assertThatThrownBy(() -> authService.login(request))
                 .isInstanceOf(UnauthorizedException.class)
                 .extracting(ex -> ((ApiException) ex).getCode())
-                .isEqualTo("error.auth.invalid-credentials");
+                .isEqualTo(ErrorMessages.AUTH_INVALID_CREDENTIALS_CODE);
 
         verify(userRepository, never()).findByEmail(anyString());
     }
@@ -151,7 +152,7 @@ class AuthServiceTest {
         assertThatThrownBy(() -> authService.login(request))
                 .isInstanceOf(UnauthorizedException.class)
                 .extracting(ex -> ((ApiException) ex).getCode())
-                .isEqualTo("error.auth.invalid-credentials");
+                .isEqualTo(ErrorMessages.AUTH_INVALID_CREDENTIALS_CODE);
     }
 
     @Test
@@ -185,7 +186,7 @@ class AuthServiceTest {
         assertThatThrownBy(() -> authService.refresh(request))
                 .isInstanceOf(UnauthorizedException.class)
                 .extracting(ex -> ((ApiException) ex).getCode())
-                .isEqualTo("error.auth.refresh-expired");
+                .isEqualTo(ErrorMessages.AUTH_REFRESH_EXPIRED_CODE);
     }
 
     @Test
@@ -196,7 +197,7 @@ class AuthServiceTest {
         assertThatThrownBy(() -> authService.refresh(request))
                 .isInstanceOf(UnauthorizedException.class)
                 .extracting(ex -> ((ApiException) ex).getCode())
-                .isEqualTo("error.auth.refresh-invalid");
+                .isEqualTo(ErrorMessages.AUTH_REFRESH_INVALID_CODE);
     }
 
     @Test
@@ -213,7 +214,7 @@ class AuthServiceTest {
         assertThatThrownBy(() -> authService.refresh(request))
                 .isInstanceOf(UnauthorizedException.class)
                 .extracting(ex -> ((ApiException) ex).getCode())
-                .isEqualTo("error.auth.refresh-revoked");
+                .isEqualTo(ErrorMessages.AUTH_REFRESH_REVOKED_CODE);
 
         verify(jwtService, never()).generateAccessToken(any());
     }
@@ -229,7 +230,7 @@ class AuthServiceTest {
         assertThatThrownBy(() -> authService.refresh(request))
                 .isInstanceOf(UnauthorizedException.class)
                 .extracting(ex -> ((ApiException) ex).getCode())
-                .isEqualTo("error.auth.refresh-invalid");
+                .isEqualTo(ErrorMessages.AUTH_REFRESH_INVALID_CODE);
     }
 
     @Test

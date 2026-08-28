@@ -1,5 +1,6 @@
 package com.elotech.taskmanager.security;
 
+import com.elotech.taskmanager.domain.error.ErrorMessages;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
@@ -103,7 +104,7 @@ class JwtAuthenticationFilterTest {
         verify(filterChain, org.mockito.Mockito.never()).doFilter(request, response);
         assertThat(response.getStatus()).isEqualTo(401);
         JsonNode body = objectMapper.readTree(response.getContentAsString());
-        assertThat(body.get("code").asText()).isEqualTo("error.auth.token-expired");
+        assertThat(body.get("code").asText()).isEqualTo(ErrorMessages.AUTH_TOKEN_EXPIRED_CODE);
     }
 
     @Test
@@ -119,6 +120,6 @@ class JwtAuthenticationFilterTest {
         verify(filterChain, org.mockito.Mockito.never()).doFilter(request, response);
         assertThat(response.getStatus()).isEqualTo(401);
         JsonNode body = objectMapper.readTree(response.getContentAsString());
-        assertThat(body.get("code").asText()).isEqualTo("error.auth.token-invalid");
+        assertThat(body.get("code").asText()).isEqualTo(ErrorMessages.AUTH_TOKEN_INVALID_CODE);
     }
 }

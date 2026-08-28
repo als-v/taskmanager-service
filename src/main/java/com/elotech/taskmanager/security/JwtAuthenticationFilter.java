@@ -1,6 +1,7 @@
 package com.elotech.taskmanager.security;
 
 import com.elotech.taskmanager.domain.error.ApiProblem;
+import com.elotech.taskmanager.domain.error.ErrorMessages;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
@@ -49,10 +50,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (ExpiredJwtException e) {
-            writeError(response, request, "error.auth.token-expired", "Token expired");
+            writeError(response, request, ErrorMessages.AUTH_TOKEN_EXPIRED_CODE, ErrorMessages.AUTH_TOKEN_EXPIRED_MESSAGE);
             return;
         } catch (Exception e) {
-            writeError(response, request, "error.auth.token-invalid", "Invalid token");
+            writeError(response, request, ErrorMessages.AUTH_TOKEN_INVALID_CODE, ErrorMessages.AUTH_TOKEN_INVALID_MESSAGE);
             return;
         }
 

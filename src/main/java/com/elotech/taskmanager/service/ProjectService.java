@@ -9,6 +9,7 @@ import com.elotech.taskmanager.domain.entity.ProjectMember;
 import com.elotech.taskmanager.domain.entity.User;
 import com.elotech.taskmanager.domain.enumeration.MemberRole;
 import com.elotech.taskmanager.domain.error.BadRequestException;
+import com.elotech.taskmanager.domain.error.ErrorMessages;
 import com.elotech.taskmanager.policy.ProjectAccessPolicy;
 import com.elotech.taskmanager.repository.ProjectMemberRepository;
 import com.elotech.taskmanager.repository.ProjectRepository;
@@ -78,7 +79,7 @@ public class ProjectService {
     @Transactional
     public ProjectResponse patch(UUID projectId, UpdateProjectRequest request) {
         if (request.hasNoChanges()) {
-            throw new BadRequestException("error.project.no-fields", "At least one field must be provided");
+            throw new BadRequestException(ErrorMessages.PROJECT_NO_FIELDS_CODE, ErrorMessages.PROJECT_NO_FIELDS_MESSAGE);
         }
 
         User currentUser = currentUserService.getCurrentUser();
@@ -87,7 +88,7 @@ public class ProjectService {
 
         if (request.name() != null) {
             if (request.name().isBlank()) {
-                throw new BadRequestException("error.project.name-blank", "Project name cannot be blank");
+                throw new BadRequestException(ErrorMessages.PROJECT_NAME_BLANK_CODE, ErrorMessages.PROJECT_NAME_BLANK_MESSAGE);
             }
             project.setName(request.name());
         }
@@ -104,10 +105,10 @@ public class ProjectService {
         int sizeValue = size == null ? DEFAULT_SIZE : size;
 
         if (pageValue < 0) {
-            throw new BadRequestException("error.pagination.page-invalid", "Page must be greater than or equal to zero");
+            throw new BadRequestException(ErrorMessages.PAGINATION_PAGE_INVALID_CODE, ErrorMessages.PAGINATION_PAGE_INVALID_MESSAGE);
         }
         if (sizeValue < 1) {
-            throw new BadRequestException("error.pagination.size-invalid", "Size must be greater than zero");
+            throw new BadRequestException(ErrorMessages.PAGINATION_SIZE_INVALID_CODE, ErrorMessages.PAGINATION_SIZE_INVALID_MESSAGE);
         }
 
         return PageRequest.of(pageValue, Math.min(sizeValue, MAX_SIZE), Sort.by(Sort.Direction.DESC, "createdAt"));

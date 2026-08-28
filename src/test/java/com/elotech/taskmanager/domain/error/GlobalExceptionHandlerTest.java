@@ -34,24 +34,24 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleApiException_shouldMapStatusAndCode_forConflictException() {
-        ConflictException ex = new ConflictException("error.auth.email-in-use", "Email already in use: maria@exemplo.com");
+        ConflictException ex = new ConflictException(ErrorMessages.AUTH_EMAIL_IN_USE_CODE, "Email already in use: maria@exemplo.com");
 
         ResponseEntity<ApiProblem> response = handler.handleApiException(ex, webRequest);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(response.getBody().getCode()).isEqualTo("error.auth.email-in-use");
+        assertThat(response.getBody().getCode()).isEqualTo(ErrorMessages.AUTH_EMAIL_IN_USE_CODE);
         assertThat(response.getBody().getDetail()).isEqualTo("Email already in use: maria@exemplo.com");
         assertThat(response.getBody().getInstance().toString()).isEqualTo("/api/auth/login");
     }
 
     @Test
     void handleApiException_shouldMapStatusAndCode_forUnauthorizedException() {
-        UnauthorizedException ex = new UnauthorizedException("error.auth.invalid-credentials", "Invalid email or password");
+        UnauthorizedException ex = new UnauthorizedException(ErrorMessages.AUTH_INVALID_CREDENTIALS_CODE, ErrorMessages.AUTH_INVALID_CREDENTIALS_MESSAGE);
 
         ResponseEntity<ApiProblem> response = handler.handleApiException(ex, webRequest);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
-        assertThat(response.getBody().getCode()).isEqualTo("error.auth.invalid-credentials");
+        assertThat(response.getBody().getCode()).isEqualTo(ErrorMessages.AUTH_INVALID_CREDENTIALS_CODE);
     }
 
     @Test
@@ -61,7 +61,7 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<ApiProblem> response = handler.handleNotFound(ex, webRequest);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(response.getBody().getCode()).isEqualTo("error.resource.not-found");
+        assertThat(response.getBody().getCode()).isEqualTo(ErrorMessages.RESOURCE_NOT_FOUND_CODE);
         assertThat(response.getBody().getDetail()).contains("static/missing.js");
     }
 
@@ -78,7 +78,7 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         ApiProblem body = response.getBody();
-        assertThat(body.getCode()).isEqualTo("error.validation.failed");
+        assertThat(body.getCode()).isEqualTo(ErrorMessages.VALIDATION_FAILED_CODE);
         assertThat(body.getErrors()).hasSize(1);
         ApiProblem.ValidationError error = body.getErrors().get(0);
         assertThat(error.getField()).isEqualTo("refresh_token");
@@ -93,7 +93,7 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<ApiProblem> response = handler.handleUnexpected(ex, webRequest);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-        assertThat(response.getBody().getCode()).isEqualTo("error.internal");
+        assertThat(response.getBody().getCode()).isEqualTo(ErrorMessages.INTERNAL_CODE);
         assertThat(response.getBody().getDetail()).isEqualTo("An unexpected error occurred");
     }
 }

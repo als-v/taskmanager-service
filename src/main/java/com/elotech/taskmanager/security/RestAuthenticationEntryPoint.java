@@ -1,6 +1,7 @@
 package com.elotech.taskmanager.security;
 
 import com.elotech.taskmanager.domain.error.ApiProblem;
+import com.elotech.taskmanager.domain.error.ErrorMessages;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,7 +24,7 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException {
-        String code = authException instanceof JwtAuthenticationException e ? e.getCode() : "error.auth.unauthorized";
+        String code = authException instanceof JwtAuthenticationException e ? e.getCode() : ErrorMessages.AUTH_UNAUTHORIZED_CODE;
 
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);

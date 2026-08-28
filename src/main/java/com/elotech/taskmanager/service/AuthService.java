@@ -1,6 +1,7 @@
 package com.elotech.taskmanager.service;
 
 import com.elotech.taskmanager.domain.error.ConflictException;
+import com.elotech.taskmanager.domain.error.ErrorMessages;
 import com.elotech.taskmanager.domain.error.UnauthorizedException;
 import com.elotech.taskmanager.domain.dto.request.auth.LoginRequest;
 import com.elotech.taskmanager.domain.dto.request.auth.RefreshRequest;
@@ -43,7 +44,7 @@ public class AuthService {
     public UserResponse signUp(SignUpRequest request) {
 
         if (userRepository.findByEmail(request.email()).isPresent())
-            throw new ConflictException("error.auth.email-in-use", "Email already in use: " + request.email());
+            throw new ConflictException(ErrorMessages.AUTH_EMAIL_IN_USE_CODE, ErrorMessages.AUTH_EMAIL_IN_USE_MESSAGE + request.email());
 
         User user = User.builder().name(request.name()).email(request.email()).password(passwordEncoder.encode(request.password())).build();
 
@@ -56,10 +57,10 @@ public class AuthService {
         try {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.email(), request.password()));
         } catch (AuthenticationException e) {
-            throw new UnauthorizedException("error.auth.invalid-credentials", "Invalid email or password");
+            throw new UnauthorizedException(ErrorMessages.AUTH_INVALID_CREDENTIALS_CODE, ErrorMessages.AUTH_INVALID_CREDENTIALS_MESSAGE);
         }
 
-        User user = userRepository.findByEmail(request.email()).orElseThrow(() -> new UnauthorizedException("error.auth.invalid-credentials", "Invalid email or password"));
+        User user = userRepository.findByEmail(request.email()).orElseThrow(() -> new UnauthorizedException(ErrorMessages.AUTH_INVALID_CREDENTIALS_CODE, ErrorMessages.AUTH_INVALID_CREDENTIALS_MESSAGE));
 
         return issueTokens(user);
     }
@@ -70,18 +71,18 @@ public class AuthService {
         try {
             claims = jwtService.parseRefreshToken(request.refreshToken());
         } catch (ExpiredJwtException e) {
-            throw new UnauthorizedException("error.auth.refresh-expired", "Refresh token expired");
+            throw new UnauthorizedException(ErrorMessages.AUTH_REFRESH_EXPIRED_CODE, ErrorMessages.AUTH_REFRESH_EXPIRED_MESSAGE);
         } catch (JwtException e) {
-            throw new UnauthorizedException("error.auth.refresh-invalid", "Invalid refresh token");
+            throw new UnauthorizedException(ErrorMessages.AUTH_REFRESH_INVALID_CODE, ErrorMessages.AUTH_INVALID_REFRESH_TOKEN_MESSAGE);
         }
 
         String jti = claims.getPayload().getId();
 
         if (!refreshTokenStore.exists(jti))
-            throw new UnauthorizedException("error.auth.refresh-revoked", "Invalid refresh token");
+            throw new UnauthorizedException(ErrorMessages.AUTH_REFRESH_REVOKED_CODE, ErrorMessages.AUTH_INVALID_REFRESH_TOKEN_MESSAGE);
 
         String email = claims.getPayload().getSubject();
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new UnauthorizedException("error.auth.refresh-invalid", "Invalid refresh token"));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new UnauthorizedException(ErrorMessages.AUTH_REFRESH_INVALID_CODE, ErrorMessages.AUTH_INVALID_REFRESH_TOKEN_MESSAGE));
 
         AuthResponse response = issueTokens(user);
         refreshTokenStore.delete(jti);

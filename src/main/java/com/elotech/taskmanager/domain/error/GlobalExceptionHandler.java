@@ -27,17 +27,17 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiProblem> handleNotFound(NoResourceFoundException ex, WebRequest request) {
-        return build(HttpStatus.NOT_FOUND, "error.resource.not-found", "Resource not found: " + ex.getResourcePath(), request);
+        return build(HttpStatus.NOT_FOUND, ErrorMessages.RESOURCE_NOT_FOUND_CODE, ErrorMessages.RESOURCE_NOT_FOUND_MESSAGE + ex.getResourcePath(), request);
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ApiProblem> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex, WebRequest request) {
-        return build(HttpStatus.METHOD_NOT_ALLOWED, "error.method-not-allowed", "HTTP method not allowed: " + ex.getMethod(), request);
+        return build(HttpStatus.METHOD_NOT_ALLOWED, ErrorMessages.METHOD_NOT_ALLOWED_CODE, ErrorMessages.METHOD_NOT_ALLOWED_MESSAGE + ex.getMethod(), request);
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiProblem> handleTypeMismatch(MethodArgumentTypeMismatchException ex, WebRequest request) {
-        return build(HttpStatus.BAD_REQUEST, "error.request.parameter-invalid", "Invalid value for parameter: " + ex.getName(), request);
+        return build(HttpStatus.BAD_REQUEST, ErrorMessages.REQUEST_PARAMETER_INVALID_CODE, ErrorMessages.REQUEST_PARAMETER_INVALID_MESSAGE + ex.getName(), request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -47,7 +47,7 @@ public class GlobalExceptionHandler {
             return new ApiProblem.ValidationError(field, "error.validation." + field + "." + fieldError.getCode(), fieldError.getDefaultMessage());
         }).toList();
 
-        ApiProblem problem = ApiProblem.of(HttpStatus.BAD_REQUEST, "error.validation.failed", "One or more fields are invalid", uri(request));
+        ApiProblem problem = ApiProblem.of(HttpStatus.BAD_REQUEST, ErrorMessages.VALIDATION_FAILED_CODE, ErrorMessages.VALIDATION_FAILED_MESSAGE, uri(request));
         problem.setErrors(errors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
     }
@@ -58,8 +58,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiProblem> handleUnexpected(Exception ex, WebRequest request) {
-        log.error("Unexpected error while handling request {}", uri(request), ex);
-        return build(HttpStatus.INTERNAL_SERVER_ERROR, "error.internal", "An unexpected error occurred", request);
+        if (log.isErrorEnabled()) {
+            log.error("Unexpected error while handling request {}", uri(request), ex);
+        }
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, ErrorMessages.INTERNAL_CODE, ErrorMessages.INTERNAL_MESSAGE, request);
     }
 
     private ResponseEntity<ApiProblem> build(HttpStatus status, String code, String message, WebRequest request) {

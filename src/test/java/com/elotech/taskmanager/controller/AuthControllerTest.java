@@ -5,6 +5,7 @@ import com.elotech.taskmanager.domain.dto.request.auth.LoginRequest;
 import com.elotech.taskmanager.domain.dto.request.auth.RefreshRequest;
 import com.elotech.taskmanager.domain.dto.request.auth.SignUpRequest;
 import com.elotech.taskmanager.domain.dto.response.auth.UserResponse;
+import com.elotech.taskmanager.domain.error.ErrorMessages;
 import com.elotech.taskmanager.service.AuthService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -57,7 +58,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("error.validation.failed"));
+                .andExpect(jsonPath("$.code").value(ErrorMessages.VALIDATION_FAILED_CODE));
     }
 
     @Test
@@ -82,7 +83,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("error.validation.failed"));
+                .andExpect(jsonPath("$.code").value(ErrorMessages.VALIDATION_FAILED_CODE));
     }
 
     @Test
@@ -125,6 +126,6 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("error.validation.failed"));
+                .andExpect(jsonPath("$.code").value(ErrorMessages.VALIDATION_FAILED_CODE));
     }
 }

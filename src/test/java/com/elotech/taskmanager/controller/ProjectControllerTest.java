@@ -5,6 +5,7 @@ import com.elotech.taskmanager.domain.dto.request.project.UpdateProjectRequest;
 import com.elotech.taskmanager.domain.dto.response.common.PageResponse;
 import com.elotech.taskmanager.domain.dto.response.project.ProjectResponse;
 import com.elotech.taskmanager.domain.enumeration.MemberRole;
+import com.elotech.taskmanager.domain.error.ErrorMessages;
 import com.elotech.taskmanager.service.ProjectService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -100,7 +101,7 @@ class ProjectControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("error.validation.failed"))
+                .andExpect(jsonPath("$.code").value(ErrorMessages.VALIDATION_FAILED_CODE))
                 .andExpect(jsonPath("$.errors[0].field").value("name"));
     }
 

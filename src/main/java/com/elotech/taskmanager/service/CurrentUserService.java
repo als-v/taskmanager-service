@@ -1,6 +1,7 @@
 package com.elotech.taskmanager.service;
 
 import com.elotech.taskmanager.domain.entity.User;
+import com.elotech.taskmanager.domain.error.ErrorMessages;
 import com.elotech.taskmanager.domain.error.UnauthorizedException;
 import com.elotech.taskmanager.repository.UserRepository;
 import org.springframework.security.core.Authentication;
@@ -19,10 +20,10 @@ public class CurrentUserService {
     public User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new UnauthorizedException("error.auth.unauthenticated", "User is not authenticated");
+            throw new UnauthorizedException(ErrorMessages.AUTH_UNAUTHENTICATED_CODE, ErrorMessages.AUTH_UNAUTHENTICATED_MESSAGE);
         }
 
         return userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() -> new UnauthorizedException("error.auth.unauthenticated", "Authenticated user not found"));
+                .orElseThrow(() -> new UnauthorizedException(ErrorMessages.AUTH_UNAUTHENTICATED_CODE, ErrorMessages.AUTH_USER_NOT_FOUND_MESSAGE));
     }
 }

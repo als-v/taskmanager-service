@@ -2,6 +2,7 @@ package com.elotech.taskmanager.policy;
 
 import com.elotech.taskmanager.domain.entity.Project;
 import com.elotech.taskmanager.domain.enumeration.MemberRole;
+import com.elotech.taskmanager.domain.error.ErrorMessages;
 import com.elotech.taskmanager.domain.error.ForbiddenException;
 import com.elotech.taskmanager.domain.error.NotFoundException;
 import com.elotech.taskmanager.repository.ProjectMemberRepository;
@@ -23,16 +24,16 @@ public class ProjectAccessPolicy {
 
     public Project requireMember(UUID projectId, UUID userId) {
         return projectRepository.findByIdAndMemberUserId(projectId, userId)
-                .orElseThrow(() -> new NotFoundException("error.project.not-found", "Project not found"));
+                .orElseThrow(() -> new NotFoundException(ErrorMessages.PROJECT_NOT_FOUND_CODE, ErrorMessages.PROJECT_NOT_FOUND_MESSAGE));
     }
 
     public Project requireAdmin(UUID projectId, UUID userId) {
         Project project = requireMember(projectId, userId);
         MemberRole role = projectMemberRepository.findRoleByProjectIdAndUserId(projectId, userId)
-                .orElseThrow(() -> new NotFoundException("error.project.not-found", "Project not found"));
+                .orElseThrow(() -> new NotFoundException(ErrorMessages.PROJECT_NOT_FOUND_CODE, ErrorMessages.PROJECT_NOT_FOUND_MESSAGE));
 
         if (role != MemberRole.ADMIN) {
-            throw new ForbiddenException("error.project.admin-required", "Only project admins can perform this action");
+            throw new ForbiddenException(ErrorMessages.PROJECT_ADMIN_REQUIRED_CODE, ErrorMessages.PROJECT_ADMIN_REQUIRED_MESSAGE);
         }
 
         return project;
@@ -40,6 +41,6 @@ public class ProjectAccessPolicy {
 
     public MemberRole requireRole(UUID projectId, UUID userId) {
         return projectMemberRepository.findRoleByProjectIdAndUserId(projectId, userId)
-                .orElseThrow(() -> new NotFoundException("error.project.not-found", "Project not found"));
+                .orElseThrow(() -> new NotFoundException(ErrorMessages.PROJECT_NOT_FOUND_CODE, ErrorMessages.PROJECT_NOT_FOUND_MESSAGE));
     }
 }
