@@ -12,6 +12,7 @@ services:
       - "${POSTGRES_PORT}:5432"
     volumes:
       - taskmanager-pgdata:/var/lib/postgresql/data
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d
     networks:
       - taskmanager_network
     healthcheck:
@@ -53,10 +54,32 @@ services:
       timeout: 5s
       retries: 5
 
+  sonarqube:
+    image: sonarqube:community
+    container_name: taskmanager-sonarqube
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SONAR_JDBC_URL: "jdbc:postgresql://postgres:5432/sonar"
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    networks:
+      - taskmanager_network
+
 volumes:
   taskmanager-pgdata:
   taskmanager-redis-data:
   taskmanager-pgadmin-data:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
 
 networks:
   taskmanager_network:
