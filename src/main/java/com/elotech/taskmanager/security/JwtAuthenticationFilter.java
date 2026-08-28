@@ -1,6 +1,6 @@
 package com.elotech.taskmanager.security;
 
-import com.elotech.taskmanager.common.error.ApiProblem;
+import com.elotech.taskmanager.domain.error.ApiProblem;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;

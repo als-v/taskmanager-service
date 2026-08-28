@@ -1,7 +1,7 @@
 package com.elotech.taskmanager.security;
 
 import com.elotech.taskmanager.config.JwtProperties;
-import com.elotech.taskmanager.domain.entities.User;
+import com.elotech.taskmanager.domain.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jws;

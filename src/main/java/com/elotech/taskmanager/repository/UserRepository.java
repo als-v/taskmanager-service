@@ -1,6 +1,6 @@
 package com.elotech.taskmanager.repository;
 
-import com.elotech.taskmanager.domain.entities.User;
+import com.elotech.taskmanager.domain.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
