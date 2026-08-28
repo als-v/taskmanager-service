@@ -42,3 +42,8 @@ application-local.properties
 ### OS ###
 .DS_Store
 Thumbs.db
+
+### Docker ###
+docker/*
+!docker/postgres-init/
+!docker/postgres-init/**
