@@ -11,7 +11,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -44,8 +43,7 @@ public class TaskController {
             summary = "Listar tasks do projeto",
             description = "Retorna uma página de tasks do projeto quando o usuário autenticado é membro `ADMIN` ou `MEMBER`. A ordenação é fixa por `createdAt DESC`."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Página de tasks", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "tasks-page", value = """
+    @ApiResponse(responseCode = "200", description = "Página de tasks", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "tasks-page", value = """
                     {
                         "content": [
                             {
@@ -66,11 +64,10 @@ public class TaskController {
                         "total_elements": 1,
                         "total_pages": 1
                     }
-                    """))),
-            @ApiResponse(responseCode = "400", description = "Paginação inválida", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class))),
-            @ApiResponse(responseCode = "401", description = "Access token ausente, expirado ou inválido", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class))),
-            @ApiResponse(responseCode = "404", description = "Projeto inexistente ou inacessível", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
-    })
+            """)))
+    @ApiResponse(responseCode = "400", description = "Paginação inválida", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
+    @ApiResponse(responseCode = "401", description = "Access token ausente, expirado ou inválido", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
+    @ApiResponse(responseCode = "404", description = "Projeto inexistente ou inacessível", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
     public PageResponse<TaskResponse> list(
             @PathVariable UUID projectId,
             @RequestParam(required = false) Integer page,
@@ -84,10 +81,9 @@ public class TaskController {
             summary = "Buscar task por ID",
             description = "Retorna uma task específica quando o usuário autenticado é membro do projeto e a task pertence ao projeto informado."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Task encontrada", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TaskResponse.class))),
-            @ApiResponse(responseCode = "401", description = "Access token ausente, expirado ou inválido", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class))),
-            @ApiResponse(responseCode = "404", description = "Projeto ou task inexistente/inacessível", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class), examples = @ExampleObject(name = "task-not-found", value = """
+    @ApiResponse(responseCode = "200", description = "Task encontrada", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TaskResponse.class)))
+    @ApiResponse(responseCode = "401", description = "Access token ausente, expirado ou inválido", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
+    @ApiResponse(responseCode = "404", description = "Projeto ou task inexistente/inacessível", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class), examples = @ExampleObject(name = "task-not-found", value = """
                     {
                         "status": 404,
                         "type": "about:blank",
@@ -96,8 +92,7 @@ public class TaskController {
                         "instance": "/api/projects/8d1c1dc4-336c-4ce4-82ac-bffb82c94f5c/tasks/2f2a9a6b-4dc8-45c0-9a3f-8e7d36f0ad91",
                         "code": "error.task.not-found"
                     }
-                    """)))
-    })
+            """)))
     public TaskResponse get(@PathVariable UUID projectId, @PathVariable UUID taskId) {
         return taskService.get(projectId, taskId);
     }
@@ -108,9 +103,8 @@ public class TaskController {
             summary = "Criar task",
             description = "Cria uma task no projeto quando o usuário autenticado é membro `ADMIN` ou `MEMBER`. O responsável, quando informado, deve ser membro do projeto."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Task criada", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TaskResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Payload inválido", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class), examples = @ExampleObject(name = "invalid-task", value = """
+    @ApiResponse(responseCode = "201", description = "Task criada", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TaskResponse.class)))
+    @ApiResponse(responseCode = "400", description = "Payload inválido", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class), examples = @ExampleObject(name = "invalid-task", value = """
                     {
                         "status": 400,
                         "type": "about:blank",
@@ -126,11 +120,10 @@ public class TaskController {
                             }
                         ]
                     }
-                    """))),
-            @ApiResponse(responseCode = "401", description = "Access token ausente, expirado ou inválido", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class))),
-            @ApiResponse(responseCode = "404", description = "Projeto inexistente ou inacessível", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class))),
-            @ApiResponse(responseCode = "422", description = "Regra de negócio violada", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
-    })
+            """)))
+    @ApiResponse(responseCode = "401", description = "Access token ausente, expirado ou inválido", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
+    @ApiResponse(responseCode = "404", description = "Projeto inexistente ou inacessível", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
+    @ApiResponse(responseCode = "422", description = "Regra de negócio violada", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
     public TaskResponse create(@PathVariable UUID projectId, @Valid @RequestBody CreateTaskRequest request) {
         return taskService.create(projectId, request);
     }
@@ -140,9 +133,8 @@ public class TaskController {
             summary = "Atualizar task",
             description = "Atualiza parcialmente uma task quando o usuário autenticado é membro `ADMIN` ou `MEMBER` do projeto. O payload deve informar ao menos um campo alterável."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Task atualizada", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TaskResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Payload inválido", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class), examples = @ExampleObject(name = "empty-patch", value = """
+    @ApiResponse(responseCode = "200", description = "Task atualizada", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TaskResponse.class)))
+    @ApiResponse(responseCode = "400", description = "Payload inválido", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class), examples = @ExampleObject(name = "empty-patch", value = """
                     {
                         "status": 400,
                         "type": "about:blank",
@@ -151,11 +143,10 @@ public class TaskController {
                         "instance": "/api/projects/8d1c1dc4-336c-4ce4-82ac-bffb82c94f5c/tasks/2f2a9a6b-4dc8-45c0-9a3f-8e7d36f0ad91",
                         "code": "error.task.no-fields"
                     }
-                    """))),
-            @ApiResponse(responseCode = "401", description = "Access token ausente, expirado ou inválido", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class))),
-            @ApiResponse(responseCode = "404", description = "Projeto ou task inexistente/inacessível", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class))),
-            @ApiResponse(responseCode = "422", description = "Regra de negócio violada", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
-    })
+            """)))
+    @ApiResponse(responseCode = "401", description = "Access token ausente, expirado ou inválido", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
+    @ApiResponse(responseCode = "404", description = "Projeto ou task inexistente/inacessível", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
+    @ApiResponse(responseCode = "422", description = "Regra de negócio violada", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
     public TaskResponse patch(
             @PathVariable UUID projectId,
             @PathVariable UUID taskId,
@@ -170,10 +161,9 @@ public class TaskController {
             summary = "Deletar task",
             description = "Remove uma task do projeto. Somente membros `ADMIN` do projeto podem deletar tasks."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Task deletada"),
-            @ApiResponse(responseCode = "401", description = "Access token ausente, expirado ou inválido", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class))),
-            @ApiResponse(responseCode = "403", description = "Usuário autenticado é membro, mas não é ADMIN do projeto", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class), examples = @ExampleObject(name = "delete-admin-required", value = """
+    @ApiResponse(responseCode = "204", description = "Task deletada")
+    @ApiResponse(responseCode = "401", description = "Access token ausente, expirado ou inválido", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
+    @ApiResponse(responseCode = "403", description = "Usuário autenticado é membro, mas não é ADMIN do projeto", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class), examples = @ExampleObject(name = "delete-admin-required", value = """
                     {
                         "status": 403,
                         "type": "about:blank",
@@ -182,9 +172,8 @@ public class TaskController {
                         "instance": "/api/projects/8d1c1dc4-336c-4ce4-82ac-bffb82c94f5c/tasks/2f2a9a6b-4dc8-45c0-9a3f-8e7d36f0ad91",
                         "code": "error.task.delete-admin-required"
                     }
-                    """))),
-            @ApiResponse(responseCode = "404", description = "Projeto ou task inexistente/inacessível", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
-    })
+            """)))
+    @ApiResponse(responseCode = "404", description = "Projeto ou task inexistente/inacessível", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
     public void delete(@PathVariable UUID projectId, @PathVariable UUID taskId) {
         taskService.delete(projectId, taskId);
     }

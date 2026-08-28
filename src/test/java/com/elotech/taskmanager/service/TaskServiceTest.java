@@ -140,8 +140,10 @@ class TaskServiceTest {
         given(projectAccessPolicy.requireRole(projectId, currentUser.getId())).willReturn(MemberRole.MEMBER);
         given(projectMemberRepository.existsByProjectIdAndUserId(projectId, assigneeId)).willReturn(false);
 
-        assertThatThrownBy(() -> taskService.create(projectId, new CreateTaskRequest(
-                "Criar login", null, TaskStatus.TODO, Priority.HIGH, assigneeId, null)))
+        CreateTaskRequest request = new CreateTaskRequest(
+                "Criar login", null, TaskStatus.TODO, Priority.HIGH, assigneeId, null);
+
+        assertThatThrownBy(() -> taskService.create(projectId, request))
                 .isInstanceOf(BusinessException.class);
     }
 
@@ -153,8 +155,11 @@ class TaskServiceTest {
         given(taskRepository.findById(task.getId())).willReturn(Optional.of(task));
         given(projectMemberRepository.existsByProjectIdAndUserId(projectId, assigneeId)).willReturn(true);
 
-        assertThatThrownBy(() -> taskService.patch(projectId, task.getId(), new UpdateTaskRequest(
-                null, null, TaskStatus.TODO, null, null, null)))
+        UUID taskId = task.getId();
+        UpdateTaskRequest request = new UpdateTaskRequest(
+                null, null, TaskStatus.TODO, null, null, null);
+
+        assertThatThrownBy(() -> taskService.patch(projectId, taskId, request))
                 .isInstanceOf(BusinessException.class);
     }
 
@@ -166,8 +171,11 @@ class TaskServiceTest {
         given(taskRepository.findById(task.getId())).willReturn(Optional.of(task));
         given(projectMemberRepository.existsByProjectIdAndUserId(projectId, assigneeId)).willReturn(true);
 
-        assertThatThrownBy(() -> taskService.patch(projectId, task.getId(), new UpdateTaskRequest(
-                null, null, TaskStatus.DONE, null, null, null)))
+        UUID taskId = task.getId();
+        UpdateTaskRequest request = new UpdateTaskRequest(
+                null, null, TaskStatus.DONE, null, null, null);
+
+        assertThatThrownBy(() -> taskService.patch(projectId, taskId, request))
                 .isInstanceOf(BusinessException.class);
     }
 
@@ -178,8 +186,10 @@ class TaskServiceTest {
         given(projectMemberRepository.existsByProjectIdAndUserId(projectId, assigneeId)).willReturn(true);
         given(taskRepository.countByProjectIdAndUserIdAndStatus(projectId, assigneeId, TaskStatus.IN_PROGRESS)).willReturn(5L);
 
-        assertThatThrownBy(() -> taskService.create(projectId, new CreateTaskRequest(
-                "Criar login", null, TaskStatus.IN_PROGRESS, Priority.HIGH, assigneeId, null)))
+        CreateTaskRequest request = new CreateTaskRequest(
+                "Criar login", null, TaskStatus.IN_PROGRESS, Priority.HIGH, assigneeId, null);
+
+        assertThatThrownBy(() -> taskService.create(projectId, request))
                 .isInstanceOf(BusinessException.class);
     }
 
@@ -201,8 +211,11 @@ class TaskServiceTest {
 
     @Test
     void rejectsEmptyPatch() {
-        assertThatThrownBy(() -> taskService.patch(projectId, UUID.randomUUID(), new UpdateTaskRequest(
-                null, null, null, null, null, null)))
+        UUID taskId = UUID.randomUUID();
+        UpdateTaskRequest request = new UpdateTaskRequest(
+                null, null, null, null, null, null);
+
+        assertThatThrownBy(() -> taskService.patch(projectId, taskId, request))
                 .isInstanceOf(BadRequestException.class);
     }
 
@@ -228,7 +241,9 @@ class TaskServiceTest {
         given(projectAccessPolicy.requireMember(projectId, currentUser.getId())).willReturn(project());
         given(projectAccessPolicy.requireRole(projectId, currentUser.getId())).willReturn(MemberRole.MEMBER);
 
-        assertThatThrownBy(() -> taskService.delete(projectId, UUID.randomUUID()))
+        UUID taskId = UUID.randomUUID();
+
+        assertThatThrownBy(() -> taskService.delete(projectId, taskId))
                 .isInstanceOf(ForbiddenException.class);
     }
 
