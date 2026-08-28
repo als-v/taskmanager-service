@@ -7,3 +7,10 @@ spring:
     driver-class-name: org.h2.Driver
     username: sa
     password:
+
+app:
+  jwt:
+    secret: test-access-secret
+    expiration-ms: 900000
+    refresh-secret: test-refresh-secret
+    refresh-expiration-ms: 604800000
