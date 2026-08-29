@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/projects/{projectId}/logs")
+@RequestMapping("/api/projects/{projectId}/audit-log")
 @Tag(name = "Audit log", description = "Consulta de eventos auditados por projeto")
 public class AuditLogController {
 

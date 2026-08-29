@@ -5,12 +5,12 @@ import com.elotech.taskmanager.domain.dto.response.notification.NotificationResp
 import com.elotech.taskmanager.domain.entity.Notification;
 import com.elotech.taskmanager.domain.entity.User;
 import com.elotech.taskmanager.domain.entity.UserNotification;
-import com.elotech.taskmanager.domain.error.BadRequestException;
 import com.elotech.taskmanager.domain.error.ErrorMessages;
+import com.elotech.taskmanager.pagination.PageRequests;
+import org.springframework.data.domain.PageRequest;
 import com.elotech.taskmanager.domain.error.NotFoundException;
 import com.elotech.taskmanager.repository.NotificationRepository;
 import com.elotech.taskmanager.repository.UserNotificationRepository;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,10 +19,6 @@ import java.util.UUID;
 
 @Service
 public class NotificationService {
-
-    private static final int DEFAULT_PAGE = 0;
-    private static final int DEFAULT_SIZE = 20;
-    private static final int MAX_SIZE = 100;
 
     private final UserNotificationRepository userNotificationRepository;
     private final NotificationRepository notificationRepository;
@@ -37,7 +33,7 @@ public class NotificationService {
     @Transactional(readOnly = true)
     public PageResponse<NotificationResponse> list(Boolean unread, Integer page, Integer size) {
         User currentUser = currentUserService.getCurrentUser();
-        PageRequest pageRequest = pageRequest(page, size);
+        PageRequest pageRequest = PageRequests.of(page, size);
 
         return PageResponse.from(userNotificationRepository.findNotificationsForUser(currentUser.getId(), unread, pageRequest));
     }
@@ -54,20 +50,5 @@ public class NotificationService {
 
         Notification notification = notificationRepository.findById(notificationId).orElseThrow(() -> new NotFoundException(ErrorMessages.NOTIFICATION_NOT_FOUND_CODE, ErrorMessages.NOTIFICATION_NOT_FOUND_MESSAGE));
         return NotificationResponse.from(notification, userNotification.getReadAt());
-    }
-
-    private PageRequest pageRequest(Integer page, Integer size) {
-        int pageValue = page == null ? DEFAULT_PAGE : page;
-        int sizeValue = size == null ? DEFAULT_SIZE : size;
-
-        if (pageValue < 0) {
-            throw new BadRequestException(ErrorMessages.PAGINATION_PAGE_INVALID_CODE, ErrorMessages.PAGINATION_PAGE_INVALID_MESSAGE);
-        }
-
-        if (sizeValue < 1) {
-            throw new BadRequestException(ErrorMessages.PAGINATION_SIZE_INVALID_CODE, ErrorMessages.PAGINATION_SIZE_INVALID_MESSAGE);
-        }
-
-        return PageRequest.of(pageValue, Math.min(sizeValue, MAX_SIZE));
     }
 }

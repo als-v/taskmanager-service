@@ -17,6 +17,7 @@ import com.elotech.taskmanager.domain.enumeration.TaskStatus;
 import com.elotech.taskmanager.domain.error.BadRequestException;
 import com.elotech.taskmanager.domain.error.BusinessException;
 import com.elotech.taskmanager.domain.error.ErrorMessages;
+import com.elotech.taskmanager.pagination.PageRequests;
 import com.elotech.taskmanager.domain.error.ForbiddenException;
 import com.elotech.taskmanager.domain.error.NotFoundException;
 import com.elotech.taskmanager.policy.ProjectAccessPolicy;
@@ -25,7 +26,6 @@ import com.elotech.taskmanager.repository.ProjectMemberRepository;
 import com.elotech.taskmanager.repository.TaskLogRepository;
 import com.elotech.taskmanager.repository.TaskRepository;
 import com.elotech.taskmanager.repository.UserNotificationRepository;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,10 +35,6 @@ import java.util.UUID;
 
 @Service
 public class TaskService {
-
-    private static final int DEFAULT_PAGE = 0;
-    private static final int DEFAULT_SIZE = 20;
-    private static final int MAX_SIZE = 100;
     private static final int WIP_LIMIT = 5;
 
     private final TaskRepository taskRepository;
@@ -72,7 +68,7 @@ public class TaskService {
         User currentUser = currentUserService.getCurrentUser();
         projectAccessPolicy.requireMember(projectId, currentUser.getId());
 
-        return PageResponse.from(taskRepository.findAllByProjectId(projectId, pageRequest(page, size)).map(TaskResponse::from));
+        return PageResponse.from(taskRepository.findAllByProjectId(projectId, PageRequests.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))).map(TaskResponse::from));
     }
 
     @Transactional(readOnly = true)
@@ -294,21 +290,6 @@ public class TaskService {
                         .build())
                 .readAt(null)
                 .build());
-    }
-
-    private PageRequest pageRequest(Integer page, Integer size) {
-        int pageValue = page == null ? DEFAULT_PAGE : page;
-        int sizeValue = size == null ? DEFAULT_SIZE : size;
-
-        if (pageValue < 0) {
-            throw new BadRequestException(ErrorMessages.PAGINATION_PAGE_INVALID_CODE, ErrorMessages.PAGINATION_PAGE_INVALID_MESSAGE);
-        }
-
-        if (sizeValue < 1) {
-            throw new BadRequestException(ErrorMessages.PAGINATION_SIZE_INVALID_CODE, ErrorMessages.PAGINATION_SIZE_INVALID_MESSAGE);
-        }
-
-        return PageRequest.of(pageValue, Math.min(sizeValue, MAX_SIZE), Sort.by(Sort.Direction.DESC, "createdAt"));
     }
 
     private record PatchChanges(

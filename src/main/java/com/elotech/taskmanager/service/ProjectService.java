@@ -10,12 +10,13 @@ import com.elotech.taskmanager.domain.entity.User;
 import com.elotech.taskmanager.domain.enumeration.MemberRole;
 import com.elotech.taskmanager.domain.error.BadRequestException;
 import com.elotech.taskmanager.domain.error.ErrorMessages;
+import com.elotech.taskmanager.pagination.PageRequests;
+import org.springframework.data.domain.PageRequest;
 import com.elotech.taskmanager.policy.ProjectAccessPolicy;
 import com.elotech.taskmanager.repository.ProjectMemberRepository;
 import com.elotech.taskmanager.repository.ProjectRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,10 +27,6 @@ import java.util.UUID;
 public class ProjectService {
 
     private static final Logger log = LoggerFactory.getLogger(ProjectService.class);
-
-    private static final int DEFAULT_PAGE = 0;
-    private static final int DEFAULT_SIZE = 20;
-    private static final int MAX_SIZE = 100;
 
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
@@ -46,7 +43,7 @@ public class ProjectService {
     @Transactional(readOnly = true)
     public PageResponse<ProjectResponse> list(Integer page, Integer size) {
         User currentUser = currentUserService.getCurrentUser();
-        PageRequest pageRequest = pageRequest(page, size);
+        PageRequest pageRequest = PageRequests.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 
         return PageResponse
                 .from(
@@ -98,19 +95,5 @@ public class ProjectService {
         }
 
         return ProjectResponse.from(project, MemberRole.ADMIN);
-    }
-
-    private PageRequest pageRequest(Integer page, Integer size) {
-        int pageValue = page == null ? DEFAULT_PAGE : page;
-        int sizeValue = size == null ? DEFAULT_SIZE : size;
-
-        if (pageValue < 0) {
-            throw new BadRequestException(ErrorMessages.PAGINATION_PAGE_INVALID_CODE, ErrorMessages.PAGINATION_PAGE_INVALID_MESSAGE);
-        }
-        if (sizeValue < 1) {
-            throw new BadRequestException(ErrorMessages.PAGINATION_SIZE_INVALID_CODE, ErrorMessages.PAGINATION_SIZE_INVALID_MESSAGE);
-        }
-
-        return PageRequest.of(pageValue, Math.min(sizeValue, MAX_SIZE), Sort.by(Sort.Direction.DESC, "createdAt"));
     }
 }
