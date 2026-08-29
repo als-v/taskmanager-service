@@ -10,10 +10,9 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -30,7 +29,7 @@ public class UserController {
         this.userService = userService;
     }
 
-    @RequestMapping(method = RequestMethod.GET)
+    @GetMapping
     @Operation(
             summary = "Listar usuarios",
             description = """
@@ -45,44 +44,42 @@ public class UserController {
                     A paginacao usa page default 0, size default 20 e limite maximo 100.
                     """
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Usuarios listados", content = @Content(mediaType = "application/json", schema = @Schema(implementation = PageResponse.class), examples = @ExampleObject(name = "users-page", value = """
+    @ApiResponse(responseCode = "200", description = "Usuarios listados", content = @Content(mediaType = "application/json", schema = @Schema(implementation = PageResponse.class), examples = @ExampleObject(name = "users-page", value = """
+            {
+                "content": [
                     {
-                        "content": [
-                            {
-                                "id": "23ccfc7d-de3f-46ea-8752-4dd71c14da75",
-                                "name": "Usuario #2",
-                                "email": "usuario2@usuario2.com"
-                            }
-                        ],
-                        "page": 0,
-                        "size": 20,
-                        "total_elements": 1,
-                        "total_pages": 1
+                        "id": "23ccfc7d-de3f-46ea-8752-4dd71c14da75",
+                        "name": "Usuario #2",
+                        "email": "usuario2@usuario2.com"
                     }
-                    """))),
-            @ApiResponse(responseCode = "400", description = "Parametro de paginacao ou UUID invalido", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ApiProblem.class), examples = @ExampleObject(name = "invalid-parameter", value = """
-                    {
-                        "status": 400,
-                        "type": "about:blank",
-                        "title": "error.request.parameter-invalid",
-                        "detail": "Invalid value for parameter: project_id",
-                        "instance": "/api/users",
-                        "code": "error.request.parameter-invalid"
-                    }
-                    """))),
-            @ApiResponse(responseCode = "401", description = "Access token ausente, expirado ou invalido", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ApiProblem.class))),
-            @ApiResponse(responseCode = "404", description = "Projeto inexistente ou inacessivel quando project_id e informado", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ApiProblem.class), examples = @ExampleObject(name = "project-not-found", value = """
-                    {
-                        "status": 404,
-                        "type": "about:blank",
-                        "title": "error.project.not-found",
-                        "detail": "Project not found",
-                        "instance": "/api/users",
-                        "code": "error.project.not-found"
-                    }
-                    """)))
-    })
+                ],
+                "page": 0,
+                "size": 20,
+                "total_elements": 1,
+                "total_pages": 1
+            }
+            """)))
+    @ApiResponse(responseCode = "400", description = "Parametro de paginacao ou UUID invalido", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ApiProblem.class), examples = @ExampleObject(name = "invalid-parameter", value = """
+            {
+                "status": 400,
+                "type": "about:blank",
+                "title": "error.request.parameter-invalid",
+                "detail": "Invalid value for parameter: project_id",
+                "instance": "/api/users",
+                "code": "error.request.parameter-invalid"
+            }
+            """)))
+    @ApiResponse(responseCode = "401", description = "Access token ausente, expirado ou invalido", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ApiProblem.class)))
+    @ApiResponse(responseCode = "404", description = "Projeto inexistente ou inacessivel quando project_id e informado", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ApiProblem.class), examples = @ExampleObject(name = "project-not-found", value = """
+            {
+                "status": 404,
+                "type": "about:blank",
+                "title": "error.project.not-found",
+                "detail": "Project not found",
+                "instance": "/api/users",
+                "code": "error.project.not-found"
+            }
+            """)))
     public PageResponse<UserResponse> list(
             @Parameter(description = "Pagina solicitada, iniciando em 0", example = "0")
             @RequestParam(required = false) Integer page,

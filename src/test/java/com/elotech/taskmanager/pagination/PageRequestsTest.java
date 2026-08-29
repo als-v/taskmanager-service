@@ -92,25 +92,19 @@ class PageRequestsTest {
 
     @Test
     void shouldRejectDynamicSortFieldOutsideWhitelist() {
-        assertThatThrownBy(() -> PageRequests.of(
-                0,
-                20,
-                "password",
-                "ASC",
-                Set.of("name", "email"),
-                Sort.by(Sort.Direction.ASC, "name")
-        )).isInstanceOf(BadRequestException.class);
+        Set<String> allowed = Set.of("name", "email");
+        Sort defaultSort = Sort.by(Sort.Direction.ASC, "name");
+
+        assertThatThrownBy(() -> PageRequests.of(0, 20, "password", "ASC", allowed, defaultSort))
+                .isInstanceOf(BadRequestException.class);
     }
 
     @Test
     void shouldRejectInvalidSortDirection() {
-        assertThatThrownBy(() -> PageRequests.of(
-                0,
-                20,
-                "name",
-                "INVALID",
-                Set.of("name", "email"),
-                Sort.by(Sort.Direction.ASC, "name")
-        )).isInstanceOf(BadRequestException.class);
+        Set<String> allowed = Set.of("name", "email");
+        Sort defaultSort = Sort.by(Sort.Direction.ASC, "name");
+
+        assertThatThrownBy(() -> PageRequests.of(0, 20, "name", "INVALID", allowed, defaultSort))
+                .isInstanceOf(BadRequestException.class);
     }
 }

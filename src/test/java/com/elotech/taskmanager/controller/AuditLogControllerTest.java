@@ -36,7 +36,7 @@ class AuditLogControllerTest {
         given(auditLogService.list(projectId, null, null, null, 0, 20))
                 .willReturn(new PageResponse<>(List.of(log), 0, 20, 1, 1));
 
-        mockMvc.perform(get("/api/projects/{projectId}/audit-log", projectId)
+        mockMvc.perform(get("/api/projects/{projectId}/logs", projectId)
                         .param("page", "0")
                         .param("size", "20"))
                 .andExpect(status().isOk())
@@ -57,7 +57,7 @@ class AuditLogControllerTest {
         given(auditLogService.list(projectId, taskId, actorId, AuditAction.STATUS_CHANGED, 1, 50))
                 .willReturn(new PageResponse<>(List.of(), 1, 50, 0, 0));
 
-        mockMvc.perform(get("/api/projects/{projectId}/audit-log", projectId)
+        mockMvc.perform(get("/api/projects/{projectId}/logs", projectId)
                         .param("task_id", taskId.toString())
                         .param("actor_id", actorId.toString())
                         .param("action", "STATUS_CHANGED")
@@ -72,7 +72,7 @@ class AuditLogControllerTest {
     void returnsBadRequestForInvalidUuid() throws Exception {
         UUID projectId = UUID.randomUUID();
 
-        mockMvc.perform(get("/api/projects/{projectId}/audit-log", projectId)
+        mockMvc.perform(get("/api/projects/{projectId}/logs", projectId)
                         .param("task_id", "invalid"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("error.request.parameter-invalid"));
