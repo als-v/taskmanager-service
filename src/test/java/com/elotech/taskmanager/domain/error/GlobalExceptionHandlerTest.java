@@ -41,7 +41,7 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(response.getBody().getCode()).isEqualTo(ErrorMessages.AUTH_EMAIL_IN_USE_CODE);
         assertThat(response.getBody().getDetail()).isEqualTo("Email already in use: maria@exemplo.com");
-        assertThat(response.getBody().getInstance().toString()).isEqualTo("/api/auth/login");
+        assertThat(response.getBody().getInstance()).hasToString("/api/auth/login");
     }
 
     @Test

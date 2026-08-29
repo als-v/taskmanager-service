@@ -138,7 +138,8 @@ class ProjectMemberServiceTest {
         given(projectAccessPolicy.requireAdmin(projectId, currentUser.getId()))
                 .willThrow(new ForbiddenException("error.project.admin-required", "Only project admins can perform this action"));
 
-        assertThatThrownBy(() -> projectMemberService.add(projectId, new AddProjectMembersRequest(List.of(UUID.randomUUID()))))
+        AddProjectMembersRequest request = new AddProjectMembersRequest(List.of(UUID.randomUUID()));
+        assertThatThrownBy(() -> projectMemberService.add(projectId, request))
                 .isInstanceOf(ForbiddenException.class);
 
         verifyNoInteractions(userRepository, notificationRepository, userNotificationRepository);
@@ -149,11 +150,13 @@ class ProjectMemberServiceTest {
         given(currentUserService.getCurrentUser()).willReturn(currentUser);
         given(projectAccessPolicy.requireAdmin(projectId, currentUser.getId())).willReturn(project);
 
-        assertThatThrownBy(() -> projectMemberService.add(projectId, new AddProjectMembersRequest(List.of())))
+        AddProjectMembersRequest emptyRequest = new AddProjectMembersRequest(List.of());
+        assertThatThrownBy(() -> projectMemberService.add(projectId, emptyRequest))
                 .isInstanceOf(BadRequestException.class);
 
         UUID userId = UUID.randomUUID();
-        assertThatThrownBy(() -> projectMemberService.add(projectId, new AddProjectMembersRequest(List.of(userId, userId))))
+        AddProjectMembersRequest duplicateRequest = new AddProjectMembersRequest(List.of(userId, userId));
+        assertThatThrownBy(() -> projectMemberService.add(projectId, duplicateRequest))
                 .isInstanceOf(BadRequestException.class);
     }
 
@@ -164,7 +167,8 @@ class ProjectMemberServiceTest {
         given(projectAccessPolicy.requireAdmin(projectId, currentUser.getId())).willReturn(project);
         given(userRepository.findAllById(List.of(userId))).willReturn(List.of());
 
-        assertThatThrownBy(() -> projectMemberService.add(projectId, new AddProjectMembersRequest(List.of(userId))))
+        AddProjectMembersRequest missingUserRequest = new AddProjectMembersRequest(List.of(userId));
+        assertThatThrownBy(() -> projectMemberService.add(projectId, missingUserRequest))
                 .isInstanceOf(NotFoundException.class);
 
         verify(projectMemberRepository, never()).saveAll(any());
@@ -179,7 +183,8 @@ class ProjectMemberServiceTest {
         given(userRepository.findAllById(List.of(ana.getId()))).willReturn(List.of(ana));
         given(projectMemberRepository.findExistingUserIds(projectId, List.of(ana.getId()))).willReturn(List.of(ana.getId()));
 
-        assertThatThrownBy(() -> projectMemberService.add(projectId, new AddProjectMembersRequest(List.of(ana.getId()))))
+        AddProjectMembersRequest existingMemberRequest = new AddProjectMembersRequest(List.of(ana.getId()));
+        assertThatThrownBy(() -> projectMemberService.add(projectId, existingMemberRequest))
                 .isInstanceOf(ConflictException.class);
 
         verify(projectMemberRepository, never()).saveAll(any());

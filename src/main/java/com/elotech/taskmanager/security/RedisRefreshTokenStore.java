@@ -24,7 +24,7 @@ public class RedisRefreshTokenStore implements RefreshTokenStore {
 
     @Override
     public boolean exists(String jti) {
-        return redisTemplate.hasKey(KEY_PREFIX + jti);
+        return Boolean.TRUE.equals(redisTemplate.hasKey(KEY_PREFIX + jti));
     }
 
     @Override

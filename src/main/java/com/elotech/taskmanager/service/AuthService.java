@@ -21,11 +21,15 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 
 @Service
 public class AuthService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -94,7 +98,8 @@ public class AuthService {
         try {
             String jti = jwtService.extractJtiFromRefreshToken(request.refreshToken());
             refreshTokenStore.delete(jti);
-        } catch (JwtException ignored) {
+        } catch (JwtException e) {
+            log.debug("Token inválido/expirado");
         }
     }
 

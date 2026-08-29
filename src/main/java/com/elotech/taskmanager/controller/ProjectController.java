@@ -52,7 +52,6 @@ public class ProjectController {
                     - Ordenação fixa por `created_at DESC`; parâmetro `sort` ainda não é suportado.
                     """
     )
-    @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Página de projetos acessíveis ao usuário autenticado",
                     content = @Content(mediaType = "application/json", examples = @ExampleObject(
                             name = "projects-page",
@@ -76,7 +75,7 @@ public class ProjectController {
                                       "total_pages": 1
                                     }
                                     """
-                    ))),
+                    )))
             @ApiResponse(responseCode = "400", description = "Paginação inválida",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class),
                             examples = @ExampleObject(
@@ -92,10 +91,9 @@ public class ProjectController {
                                               "code": "error.pagination.page-invalid"
                                             }
                                             """
-                            ))),
+                            )))
             @ApiResponse(responseCode = "401", description = "Access token ausente, expirado ou inválido",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
-    })
     public PageResponse<ProjectResponse> list(@RequestParam(required = false) Integer page,
                                               @RequestParam(required = false) Integer size) {
         return projectService.list(page, size);
@@ -111,11 +109,10 @@ public class ProjectController {
                     para o usuário atual retornam o mesmo status `404`.
                     """
     )
-    @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Projeto encontrado e acessível",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProjectResponse.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProjectResponse.class)))
             @ApiResponse(responseCode = "401", description = "Access token ausente, expirado ou inválido",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
             @ApiResponse(responseCode = "404", description = "Projeto inexistente ou inacessível",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class),
                             examples = @ExampleObject(
@@ -132,7 +129,6 @@ public class ProjectController {
                                             }
                                             """
                             )))
-    })
     public ProjectResponse get(@PathVariable UUID id) {
         return projectService.get(id);
     }
@@ -146,9 +142,8 @@ public class ProjectController {
 
                     """
     )
-    @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Projeto criado com o usuário autenticado como ADMIN",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProjectResponse.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProjectResponse.class)))
             @ApiResponse(responseCode = "400", description = "Payload inválido",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class),
                             examples = @ExampleObject(
@@ -171,10 +166,9 @@ public class ProjectController {
                                               ]
                                             }
                                             """
-                            ))),
+                            )))
             @ApiResponse(responseCode = "401", description = "Access token ausente, expirado ou inválido",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
-    })
     public ProjectResponse create(@Valid @RequestBody CreateProjectRequest request) {
         return projectService.create(request);
     }
@@ -191,9 +185,8 @@ public class ProjectController {
                     - O payload deve informar ao menos um campo alterável.
                     """
     )
-    @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Projeto atualizado",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProjectResponse.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProjectResponse.class)))
             @ApiResponse(responseCode = "400", description = "Payload inválido",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class),
                             examples = @ExampleObject(
@@ -209,9 +202,9 @@ public class ProjectController {
                                               "code": "error.project.no-fields"
                                             }
                                             """
-                            ))),
+                            )))
             @ApiResponse(responseCode = "401", description = "Access token ausente, expirado ou inválido",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
             @ApiResponse(responseCode = "403", description = "Usuário autenticado é membro, mas não é ADMIN do projeto",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class),
                             examples = @ExampleObject(
@@ -227,10 +220,9 @@ public class ProjectController {
                                               "code": "error.project.admin-required"
                                             }
                                             """
-                            ))),
+                            )))
             @ApiResponse(responseCode = "404", description = "Projeto inexistente ou inacessível",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
-    })
     public ProjectResponse patch(@PathVariable UUID id, @Valid @RequestBody UpdateProjectRequest request) {
         return projectService.patch(id, request);
     }

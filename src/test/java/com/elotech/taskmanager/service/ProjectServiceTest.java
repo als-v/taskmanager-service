@@ -135,7 +135,9 @@ class ProjectServiceTest {
 
     @Test
     void patch_shouldRejectEmptyPayload() {
-        assertThatThrownBy(() -> projectService.patch(UUID.randomUUID(), new UpdateProjectRequest(null, null)))
+        UUID patchProjectId = UUID.randomUUID();
+        UpdateProjectRequest emptyPatch = new UpdateProjectRequest(null, null);
+        assertThatThrownBy(() -> projectService.patch(patchProjectId, emptyPatch))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("At least one field must be provided");
     }

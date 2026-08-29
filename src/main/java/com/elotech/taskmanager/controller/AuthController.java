@@ -42,9 +42,8 @@ public class AuthController {
                     - O e-mail deve ser único: uma segunda tentativa de cadastro com o mesmo e-mail é rejeitada.
                     """
     )
-    @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Usuário criado com sucesso",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserResponse.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserResponse.class)))
             @ApiResponse(responseCode = "409", description = "E-mail já está em uso por outra conta",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class),
                             examples = @ExampleObject(
@@ -59,7 +58,7 @@ public class AuthController {
                                               "instance": "/api/auth/signup",
                                               "code": "error.auth.email-in-use"
                                             }
-                                            """))),
+                                            """)))
             @ApiResponse(responseCode = "400", description = "Um ou mais campos são inválidos (nome, e-mail ou senha)",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class),
                             examples = @ExampleObject(
@@ -82,7 +81,6 @@ public class AuthController {
                                               ]
                                             }
                                             """)))
-    })
     public UserResponse signUp(@Valid @RequestBody SignUpRequest request) {
         return authService.signUp(request);
     }
@@ -98,9 +96,8 @@ public class AuthController {
                     - `refresh_token`: usado em `POST /api/auth/refresh` para obter um novo par de tokens sem logar novamente. Vida longa, armazenado no servidor (Redis) para permitir revogação.
                     """
     )
-    @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Login realizado com sucesso",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = AuthResponse.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = AuthResponse.class)))
             @ApiResponse(responseCode = "401", description = "E-mail ou senha inválidos",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class),
                             examples = @ExampleObject(
@@ -115,7 +112,7 @@ public class AuthController {
                                               "instance": "/api/auth/login",
                                               "code": "error.auth.invalid-credentials"
                                             }
-                                            """))),
+                                            """)))
             @ApiResponse(responseCode = "400", description = "Um ou mais campos são inválidos (e-mail ou senha ausentes)",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class),
                             examples = @ExampleObject(
@@ -138,7 +135,6 @@ public class AuthController {
                                               ]
                                             }
                                             """)))
-    })
     public AuthResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
     }
@@ -155,9 +151,8 @@ public class AuthController {
                     - Um refresh token não pode ser usado como `access_token` em rotas protegidas.
                     """
     )
-    @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Novo par de tokens gerado com sucesso",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = AuthResponse.class))),
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = AuthResponse.class)))
             @ApiResponse(responseCode = "401", description = "Refresh token expirado, inválido ou revogado",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class),
                             examples = {
@@ -200,7 +195,7 @@ public class AuthController {
                                                       "code": "error.auth.refresh-revoked"
                                                     }
                                                     """)
-                            })),
+                            }))
             @ApiResponse(responseCode = "400", description = "Campo refresh_token ausente ou vazio",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class),
                             examples = @ExampleObject(
@@ -223,7 +218,6 @@ public class AuthController {
                                               ]
                                             }
                                             """)))
-    })
     public AuthResponse refresh(@Valid @RequestBody RefreshRequest request) {
         return authService.refresh(request);
     }
@@ -240,8 +234,7 @@ public class AuthController {
                     - Não invalida o `access_token` já emitido — ele continua válido até expirar naturalmente.
                     """
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Logout realizado, nenhum conteúdo retornado", content = @Content),
+            @ApiResponse(responseCode = "204", description = "Logout realizado, nenhum conteúdo retornado", content = @Content)
             @ApiResponse(responseCode = "400", description = "Campo refresh_token ausente ou vazio",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class),
                             examples = @ExampleObject(
@@ -264,7 +257,6 @@ public class AuthController {
                                               ]
                                             }
                                             """)))
-    })
     public void logout(@Valid @RequestBody RefreshRequest request) {
         authService.logout(request);
     }

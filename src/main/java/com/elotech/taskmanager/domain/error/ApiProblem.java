@@ -7,6 +7,7 @@ import org.springframework.http.ProblemDetail;
 import java.io.Serializable;
 import java.net.URI;
 import java.util.List;
+import java.util.Objects;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiProblem extends ProblemDetail {
@@ -47,6 +48,30 @@ public class ApiProblem extends ProblemDetail {
             }
         }
         return problem;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ApiProblem that = (ApiProblem) o;
+
+        return Objects.equals(getCode(), that.getCode())
+                && Objects.equals(getDetail(), that.getDetail())
+                && Objects.equals(getInstance(), that.getInstance())
+                && Objects.equals(getStatus(), that.getStatus())
+                && Objects.equals(getType(), that.getType())
+                && Objects.equals(getTitle(), that.getTitle())
+                && Objects.equals(getProperties(), that.getProperties())
+                && Objects.equals(code, that.code)
+                && Objects.equals(errors, that.errors);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getCode(), getDetail(), getInstance(), getStatus(), getType(), getTitle(),
+                getProperties(), code, errors);
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

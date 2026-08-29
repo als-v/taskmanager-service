@@ -58,7 +58,7 @@ class UserControllerTest {
 
     @Test
     void listUsersReturnsBadRequestForInvalidPagination() throws Exception {
-        given(userService.list(eq(-1), eq(20), eq(null), eq(null), eq(null)))
+        given(userService.list(-1, 20, null, null, null))
                 .willThrow(new BadRequestException(ErrorMessages.PAGINATION_PAGE_INVALID_CODE, ErrorMessages.PAGINATION_PAGE_INVALID_MESSAGE));
 
         mockMvc.perform(get("/api/users").param("page", "-1").param("size", "20"))

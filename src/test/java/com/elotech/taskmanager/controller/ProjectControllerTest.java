@@ -47,8 +47,8 @@ class ProjectControllerTest {
     @Test
     void list_shouldReturnPagedProjects() throws Exception {
         UUID projectId = UUID.randomUUID();
-        UUID owner_id = UUID.randomUUID();
-        ProjectResponse project = projectResponse(projectId, owner_id, MemberRole.ADMIN);
+        UUID ownerId = UUID.randomUUID();
+        ProjectResponse project = projectResponse(projectId, ownerId, MemberRole.ADMIN);
 
         given(projectService.list(0, 20)).willReturn(new PageResponse<>(List.of(project), 0, 20, 1, 1));
 
@@ -67,23 +67,23 @@ class ProjectControllerTest {
     @Test
     void get_shouldReturnProject() throws Exception {
         UUID projectId = UUID.randomUUID();
-        UUID owner_id = UUID.randomUUID();
-        given(projectService.get(projectId)).willReturn(projectResponse(projectId, owner_id, MemberRole.MEMBER));
+        UUID ownerId = UUID.randomUUID();
+        given(projectService.get(projectId)).willReturn(projectResponse(projectId, ownerId, MemberRole.MEMBER));
 
         mockMvc.perform(get("/api/projects/{id}", projectId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(projectId.toString()))
-                .andExpect(jsonPath("$.owner_id").value(owner_id.toString()))
+                .andExpect(jsonPath("$.owner_id").value(ownerId.toString()))
                 .andExpect(jsonPath("$.current_user_role").value("MEMBER"));
     }
 
     @Test
     void create_shouldReturn201WithProject() throws Exception {
         UUID projectId = UUID.randomUUID();
-        UUID owner_id = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
         CreateProjectRequest request = new CreateProjectRequest("Plataforma interna", "Backlog");
         given(projectService.create(any(CreateProjectRequest.class)))
-                .willReturn(projectResponse(projectId, owner_id, MemberRole.ADMIN));
+                .willReturn(projectResponse(projectId, ownerId, MemberRole.ADMIN));
 
         mockMvc.perform(post("/api/projects")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -108,10 +108,10 @@ class ProjectControllerTest {
     @Test
     void patch_shouldUpdateProject() throws Exception {
         UUID projectId = UUID.randomUUID();
-        UUID owner_id = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
         UpdateProjectRequest request = new UpdateProjectRequest("Novo nome", null);
         given(projectService.patch(eq(projectId), any(UpdateProjectRequest.class)))
-                .willReturn(projectResponse(projectId, owner_id, MemberRole.ADMIN));
+                .willReturn(projectResponse(projectId, ownerId, MemberRole.ADMIN));
 
         mockMvc.perform(patch("/api/projects/{id}", projectId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -128,12 +128,12 @@ class ProjectControllerTest {
                 .andExpect(status().isMethodNotAllowed());
     }
 
-    private ProjectResponse projectResponse(UUID projectId, UUID owner_id, MemberRole role) {
+    private ProjectResponse projectResponse(UUID projectId, UUID ownerId, MemberRole role) {
         return new ProjectResponse(
                 projectId,
                 "Plataforma interna",
                 "Backlog",
-                owner_id,
+                ownerId,
                 role,
                 LocalDateTime.of(2026, 1, 10, 9, 0),
                 LocalDateTime.of(2026, 1, 10, 9, 0)
