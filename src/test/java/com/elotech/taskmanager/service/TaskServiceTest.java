@@ -3,7 +3,9 @@ package com.elotech.taskmanager.service;
 import com.elotech.taskmanager.domain.criteria.TaskListCriteria;
 
 import com.elotech.taskmanager.domain.dto.request.task.CreateTaskRequest;
+import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskAssigneeRequest;
 import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskRequest;
+import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskStatusRequest;
 import com.elotech.taskmanager.domain.dto.response.common.PageResponse;
 import com.elotech.taskmanager.domain.dto.response.task.TaskResponse;
 import com.elotech.taskmanager.domain.entity.Notification;
@@ -231,6 +233,178 @@ class TaskServiceTest {
 
         assertThatThrownBy(() -> taskService.patch(projectId, taskId, request))
                 .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void patchStatusUpdatesStatusAndGeneratesAudit() {
+        Task task = task(TaskStatus.TODO, Priority.HIGH, assigneeId);
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireRole(projectId, currentUser.getId())).willReturn(MemberRole.MEMBER);
+        given(taskRepository.findById(task.getId())).willReturn(Optional.of(task));
+        given(userRepository.findById(assigneeId)).willReturn(Optional.of(assigneeUser));
+
+        TaskResponse response = taskService.patchStatus(projectId, task.getId(),
+                new UpdateTaskStatusRequest(TaskStatus.IN_PROGRESS));
+
+        assertThat(response.status()).isEqualTo(TaskStatus.IN_PROGRESS);
+        ArgumentCaptor<TaskLog> logCaptor = ArgumentCaptor.forClass(TaskLog.class);
+        verify(taskLogRepository).save(logCaptor.capture());
+        assertThat(logCaptor.getValue().getAction()).isEqualTo(AuditAction.STATUS_CHANGED);
+        assertThat(logCaptor.getValue().getFromStatus()).isEqualTo(TaskStatus.TODO);
+        assertThat(logCaptor.getValue().getToStatus()).isEqualTo(TaskStatus.IN_PROGRESS);
+    }
+
+    @Test
+    void patchStatusRejectsDoneToTodo() {
+        Task task = task(TaskStatus.DONE, Priority.HIGH, assigneeId);
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireRole(projectId, currentUser.getId())).willReturn(MemberRole.ADMIN);
+        given(taskRepository.findById(task.getId())).willReturn(Optional.of(task));
+
+        UUID taskId = task.getId();
+        UpdateTaskStatusRequest request = new UpdateTaskStatusRequest(TaskStatus.TODO);
+
+        assertThatThrownBy(() -> taskService.patchStatus(projectId, taskId, request))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void patchStatusRejectsCriticalDoneByMember() {
+        Task task = task(TaskStatus.IN_PROGRESS, Priority.CRITICAL, assigneeId);
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireRole(projectId, currentUser.getId())).willReturn(MemberRole.MEMBER);
+        given(taskRepository.findById(task.getId())).willReturn(Optional.of(task));
+
+        UUID taskId = task.getId();
+        UpdateTaskStatusRequest request = new UpdateTaskStatusRequest(TaskStatus.DONE);
+
+        assertThatThrownBy(() -> taskService.patchStatus(projectId, taskId, request))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void patchStatusRejectsWhenWipLimitExceeded() {
+        Task task = task(TaskStatus.TODO, Priority.HIGH, assigneeId);
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireRole(projectId, currentUser.getId())).willReturn(MemberRole.ADMIN);
+        given(taskRepository.findById(task.getId())).willReturn(Optional.of(task));
+        given(taskRepository.countByProjectIdAndUserIdAndStatusAndDeletedAtIsNull(projectId, assigneeId, TaskStatus.IN_PROGRESS))
+                .willReturn(5L);
+
+        UUID taskId = task.getId();
+        UpdateTaskStatusRequest request = new UpdateTaskStatusRequest(TaskStatus.IN_PROGRESS);
+
+        assertThatThrownBy(() -> taskService.patchStatus(projectId, taskId, request))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void patchStatusIsNoopAuditWhenStatusUnchanged() {
+        Task task = task(TaskStatus.IN_PROGRESS, Priority.HIGH, assigneeId);
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireRole(projectId, currentUser.getId())).willReturn(MemberRole.MEMBER);
+        given(taskRepository.findById(task.getId())).willReturn(Optional.of(task));
+        given(userRepository.findById(assigneeId)).willReturn(Optional.of(assigneeUser));
+
+        TaskResponse response = taskService.patchStatus(projectId, task.getId(),
+                new UpdateTaskStatusRequest(TaskStatus.IN_PROGRESS));
+
+        assertThat(response.status()).isEqualTo(TaskStatus.IN_PROGRESS);
+        verify(taskLogRepository, never()).save(any(TaskLog.class));
+    }
+
+    @Test
+    void patchAssigneeUpdatesAssigneeGeneratesAuditAndNotification() {
+        Task task = task(TaskStatus.TODO, Priority.HIGH, null);
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireRole(projectId, currentUser.getId())).willReturn(MemberRole.ADMIN);
+        given(taskRepository.findById(task.getId())).willReturn(Optional.of(task));
+        given(projectMemberRepository.existsByProjectIdAndUserId(projectId, assigneeId)).willReturn(true);
+        given(userRepository.findById(assigneeId)).willReturn(Optional.of(assigneeUser));
+        given(notificationRepository.save(any(Notification.class))).willAnswer(invocation -> {
+            Notification notification = invocation.getArgument(0);
+            notification.setId(UUID.randomUUID());
+            return notification;
+        });
+
+        TaskResponse response = taskService.patchAssignee(projectId, task.getId(),
+                new UpdateTaskAssigneeRequest(assigneeId));
+
+        assertThat(response.assignee().id()).isEqualTo(assigneeId);
+        ArgumentCaptor<TaskLog> logCaptor = ArgumentCaptor.forClass(TaskLog.class);
+        verify(taskLogRepository).save(logCaptor.capture());
+        assertThat(logCaptor.getValue().getAction()).isEqualTo(AuditAction.ASSIGNEE_CHANGED);
+        ArgumentCaptor<Notification> notificationCaptor = ArgumentCaptor.forClass(Notification.class);
+        verify(notificationRepository).save(notificationCaptor.capture());
+        assertThat(notificationCaptor.getValue().getType()).isEqualTo(NotificationType.TASK_ASSIGNED);
+        verify(userNotificationRepository).save(any(UserNotification.class));
+    }
+
+    @Test
+    void patchAssigneeToNullRemovesAssigneeAndSkipsNotification() {
+        Task task = task(TaskStatus.TODO, Priority.HIGH, assigneeId);
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireRole(projectId, currentUser.getId())).willReturn(MemberRole.MEMBER);
+        given(taskRepository.findById(task.getId())).willReturn(Optional.of(task));
+
+        TaskResponse response = taskService.patchAssignee(projectId, task.getId(),
+                new UpdateTaskAssigneeRequest(null));
+
+        assertThat(response.assignee()).isNull();
+        ArgumentCaptor<TaskLog> logCaptor = ArgumentCaptor.forClass(TaskLog.class);
+        verify(taskLogRepository).save(logCaptor.capture());
+        assertThat(logCaptor.getValue().getAction()).isEqualTo(AuditAction.ASSIGNEE_CHANGED);
+        verify(notificationRepository, never()).save(any(Notification.class));
+    }
+
+    @Test
+    void patchAssigneeRejectsWhenNotProjectMember() {
+        Task task = task(TaskStatus.TODO, Priority.HIGH, null);
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireRole(projectId, currentUser.getId())).willReturn(MemberRole.MEMBER);
+        given(taskRepository.findById(task.getId())).willReturn(Optional.of(task));
+        given(projectMemberRepository.existsByProjectIdAndUserId(projectId, assigneeId)).willReturn(false);
+
+        UUID taskId = task.getId();
+        UpdateTaskAssigneeRequest request = new UpdateTaskAssigneeRequest(assigneeId);
+
+        assertThatThrownBy(() -> taskService.patchAssignee(projectId, taskId, request))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void patchAssigneeRejectsWhenWipLimitExceededForNewAssignee() {
+        UUID otherAssigneeId = UUID.randomUUID();
+        Task task = task(TaskStatus.IN_PROGRESS, Priority.HIGH, otherAssigneeId);
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireRole(projectId, currentUser.getId())).willReturn(MemberRole.ADMIN);
+        given(taskRepository.findById(task.getId())).willReturn(Optional.of(task));
+        given(projectMemberRepository.existsByProjectIdAndUserId(projectId, assigneeId)).willReturn(true);
+        given(taskRepository.countByProjectIdAndUserIdAndStatusAndDeletedAtIsNull(projectId, assigneeId, TaskStatus.IN_PROGRESS))
+                .willReturn(5L);
+
+        UUID taskId = task.getId();
+        UpdateTaskAssigneeRequest request = new UpdateTaskAssigneeRequest(assigneeId);
+
+        assertThatThrownBy(() -> taskService.patchAssignee(projectId, taskId, request))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void patchAssigneeIsNoopAuditWhenAssigneeUnchanged() {
+        Task task = task(TaskStatus.TODO, Priority.HIGH, assigneeId);
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireRole(projectId, currentUser.getId())).willReturn(MemberRole.MEMBER);
+        given(taskRepository.findById(task.getId())).willReturn(Optional.of(task));
+        given(projectMemberRepository.existsByProjectIdAndUserId(projectId, assigneeId)).willReturn(true);
+        given(userRepository.findById(assigneeId)).willReturn(Optional.of(assigneeUser));
+
+        TaskResponse response = taskService.patchAssignee(projectId, task.getId(),
+                new UpdateTaskAssigneeRequest(assigneeId));
+
+        assertThat(response.assignee().id()).isEqualTo(assigneeId);
+        verify(taskLogRepository, never()).save(any(TaskLog.class));
+        verify(notificationRepository, never()).save(any(Notification.class));
     }
 
     @Test

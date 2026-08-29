@@ -1,7 +1,9 @@
 package com.elotech.taskmanager.controller;
 
 import com.elotech.taskmanager.domain.dto.request.task.CreateTaskRequest;
+import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskAssigneeRequest;
 import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskRequest;
+import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskStatusRequest;
 import com.elotech.taskmanager.domain.dto.response.common.PageResponse;
 import com.elotech.taskmanager.domain.dto.response.task.TaskResponse;
 import com.elotech.taskmanager.domain.enumeration.Priority;
@@ -183,6 +185,41 @@ public class TaskController {
             @Valid @RequestBody UpdateTaskRequest request
     ) {
         return taskService.patch(projectId, taskId, request);
+    }
+
+    @PatchMapping("/{taskId}/status")
+    @Operation(
+            summary = "Atualizar status da task",
+            description = "Atualiza somente o status da task, reaproveitando as mesmas regras do PATCH geral: actor precisa ser membro do projeto; DONE não retorna para TODO; tasks CRITICAL só vão para DONE por ADMIN; limite de 5 tasks IN_PROGRESS por responsável no projeto."
+    )
+    @ApiResponse(responseCode = "200", description = "Status atualizado", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TaskResponse.class)))
+    @ApiResponse(responseCode = "400", description = "Payload inválido", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
+    @ApiResponse(responseCode = "401", description = "Access token ausente, expirado ou inválido", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
+    @ApiResponse(responseCode = "404", description = "Projeto ou task inexistente/inacessível", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
+    @ApiResponse(responseCode = "422", description = "Regra de negócio violada", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
+    public TaskResponse patchStatus(
+            @PathVariable UUID projectId,
+            @PathVariable UUID taskId,
+            @Valid @RequestBody UpdateTaskStatusRequest request
+    ) {
+        return taskService.patchStatus(projectId, taskId, request);
+    }
+
+    @PatchMapping("/{taskId}/assignee")
+    @Operation(
+            summary = "Atualizar responsável da task",
+            description = "Atualiza somente o responsável pela task. Use `assignee_id: null` para remover o responsável. Valida que o novo responsável é membro do projeto e respeita o limite de 5 tasks IN_PROGRESS por responsável."
+    )
+    @ApiResponse(responseCode = "200", description = "Responsável atualizado", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TaskResponse.class)))
+    @ApiResponse(responseCode = "401", description = "Access token ausente, expirado ou inválido", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
+    @ApiResponse(responseCode = "404", description = "Projeto ou task inexistente/inacessível", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
+    @ApiResponse(responseCode = "422", description = "Regra de negócio violada", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
+    public TaskResponse patchAssignee(
+            @PathVariable UUID projectId,
+            @PathVariable UUID taskId,
+            @Valid @RequestBody UpdateTaskAssigneeRequest request
+    ) {
+        return taskService.patchAssignee(projectId, taskId, request);
     }
 
     @DeleteMapping("/{taskId}")

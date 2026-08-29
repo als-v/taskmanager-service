@@ -3,7 +3,9 @@ package com.elotech.taskmanager.service;
 import com.elotech.taskmanager.domain.criteria.TaskListCriteria;
 
 import com.elotech.taskmanager.domain.dto.request.task.CreateTaskRequest;
+import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskAssigneeRequest;
 import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskRequest;
+import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskStatusRequest;
 import com.elotech.taskmanager.domain.dto.response.common.PageResponse;
 import com.elotech.taskmanager.domain.dto.response.task.TaskResponse;
 import com.elotech.taskmanager.domain.entity.Notification;
@@ -150,6 +152,47 @@ public class TaskService {
 
         validatePatch(projectId, request, actorRole, task);
         applyPatch(task, request, currentUser.getId());
+
+        return TaskResponse.from(task, resolveAssignee(task.getUserId()));
+    }
+
+    @Transactional
+    public TaskResponse patchStatus(UUID projectId, UUID taskId, UpdateTaskStatusRequest request) {
+        User currentUser = currentUserService.getCurrentUser();
+        MemberRole actorRole = projectAccessPolicy.requireRole(projectId, currentUser.getId());
+        Task task = requireTaskInProject(projectId, taskId);
+
+        TaskStatus previousStatus = task.getStatus();
+        TaskStatus nextStatus = request.status();
+
+        validateDoneToTodo(previousStatus, nextStatus);
+        validateCriticalDone(task.getPriority(), nextStatus, actorRole);
+        validateWipLimit(projectId, task.getUserId(), nextStatus, task);
+
+        if (previousStatus != nextStatus) {
+            task.setStatus(nextStatus);
+            saveAudit(task, currentUser.getId(), AuditAction.STATUS_CHANGED, previousStatus, nextStatus);
+        }
+
+        return TaskResponse.from(task, resolveAssignee(task.getUserId()));
+    }
+
+    @Transactional
+    public TaskResponse patchAssignee(UUID projectId, UUID taskId, UpdateTaskAssigneeRequest request) {
+        User currentUser = currentUserService.getCurrentUser();
+        projectAccessPolicy.requireRole(projectId, currentUser.getId());
+        Task task = requireTaskInProject(projectId, taskId);
+
+        UUID nextAssigneeId = request.assigneeId();
+
+        validateAssignee(projectId, nextAssigneeId);
+        validateWipLimit(projectId, nextAssigneeId, task.getStatus(), task);
+
+        if (!Objects.equals(task.getUserId(), nextAssigneeId)) {
+            task.setUserId(nextAssigneeId);
+            saveAudit(task, currentUser.getId(), AuditAction.ASSIGNEE_CHANGED, null, null);
+            notifyAssignee(task, currentUser.getId());
+        }
 
         return TaskResponse.from(task, resolveAssignee(task.getUserId()));
     }

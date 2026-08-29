@@ -1,7 +1,9 @@
 package com.elotech.taskmanager.controller;
 
 import com.elotech.taskmanager.domain.dto.request.task.CreateTaskRequest;
+import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskAssigneeRequest;
 import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskRequest;
+import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskStatusRequest;
 import com.elotech.taskmanager.domain.dto.response.common.PageResponse;
 import com.elotech.taskmanager.domain.dto.response.task.TaskAssigneeResponse;
 import com.elotech.taskmanager.domain.dto.response.task.TaskResponse;
@@ -178,6 +180,94 @@ class TaskControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.code").value(ErrorMessages.TASK_DONE_TO_TODO_CODE));
+    }
+
+    @Test
+    void patchesTaskStatus() throws Exception {
+        UUID projectId = UUID.randomUUID();
+        UUID taskId = UUID.randomUUID();
+        UpdateTaskStatusRequest request = new UpdateTaskStatusRequest(TaskStatus.IN_PROGRESS);
+        TaskResponse task = taskResponse(projectId, taskId, null);
+        given(taskService.patchStatus(eq(projectId), eq(taskId), any(UpdateTaskStatusRequest.class))).willReturn(task);
+
+        mockMvc.perform(patch("/api/projects/{projectId}/tasks/{taskId}/status", projectId, taskId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(taskId.toString()));
+    }
+
+    @Test
+    void rejectsInvalidPatchStatusPayload() throws Exception {
+        UUID projectId = UUID.randomUUID();
+        UUID taskId = UUID.randomUUID();
+
+        mockMvc.perform(patch("/api/projects/{projectId}/tasks/{taskId}/status", projectId, taskId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorMessages.VALIDATION_FAILED_CODE));
+    }
+
+    @Test
+    void mapsPatchStatusBusinessRuleViolationTo422() throws Exception {
+        UUID projectId = UUID.randomUUID();
+        UUID taskId = UUID.randomUUID();
+        UpdateTaskStatusRequest request = new UpdateTaskStatusRequest(TaskStatus.TODO);
+        given(taskService.patchStatus(eq(projectId), eq(taskId), any(UpdateTaskStatusRequest.class)))
+                .willThrow(new BusinessException(ErrorMessages.TASK_DONE_TO_TODO_CODE, ErrorMessages.TASK_DONE_TO_TODO_MESSAGE));
+
+        mockMvc.perform(patch("/api/projects/{projectId}/tasks/{taskId}/status", projectId, taskId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value(ErrorMessages.TASK_DONE_TO_TODO_CODE));
+    }
+
+    @Test
+    void patchesTaskAssignee() throws Exception {
+        UUID projectId = UUID.randomUUID();
+        UUID taskId = UUID.randomUUID();
+        UUID assigneeId = UUID.randomUUID();
+        UpdateTaskAssigneeRequest request = new UpdateTaskAssigneeRequest(assigneeId);
+        TaskResponse task = taskResponse(projectId, taskId, assigneeId);
+        given(taskService.patchAssignee(eq(projectId), eq(taskId), any(UpdateTaskAssigneeRequest.class))).willReturn(task);
+
+        mockMvc.perform(patch("/api/projects/{projectId}/tasks/{taskId}/assignee", projectId, taskId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.assignee.id").value(assigneeId.toString()));
+    }
+
+    @Test
+    void patchesTaskAssigneeToNull() throws Exception {
+        UUID projectId = UUID.randomUUID();
+        UUID taskId = UUID.randomUUID();
+        TaskResponse task = taskResponse(projectId, taskId, null);
+        given(taskService.patchAssignee(eq(projectId), eq(taskId), any(UpdateTaskAssigneeRequest.class))).willReturn(task);
+
+        mockMvc.perform(patch("/api/projects/{projectId}/tasks/{taskId}/assignee", projectId, taskId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"assignee_id\": null}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.assignee").value(org.hamcrest.Matchers.nullValue()));
+    }
+
+    @Test
+    void mapsPatchAssigneeBusinessRuleViolationTo422() throws Exception {
+        UUID projectId = UUID.randomUUID();
+        UUID taskId = UUID.randomUUID();
+        UUID assigneeId = UUID.randomUUID();
+        UpdateTaskAssigneeRequest request = new UpdateTaskAssigneeRequest(assigneeId);
+        given(taskService.patchAssignee(eq(projectId), eq(taskId), any(UpdateTaskAssigneeRequest.class)))
+                .willThrow(new BusinessException(ErrorMessages.TASK_ASSIGNEE_NOT_MEMBER_CODE, ErrorMessages.TASK_ASSIGNEE_NOT_MEMBER_MESSAGE));
+
+        mockMvc.perform(patch("/api/projects/{projectId}/tasks/{taskId}/assignee", projectId, taskId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value(ErrorMessages.TASK_ASSIGNEE_NOT_MEMBER_CODE));
     }
 
     @Test
