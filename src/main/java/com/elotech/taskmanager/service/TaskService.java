@@ -30,6 +30,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -68,7 +69,7 @@ public class TaskService {
         User currentUser = currentUserService.getCurrentUser();
         projectAccessPolicy.requireMember(projectId, currentUser.getId());
 
-        return PageResponse.from(taskRepository.findAllByProjectId(projectId, PageRequests.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))).map(TaskResponse::from));
+        return PageResponse.from(taskRepository.findAllByProjectIdAndDeletedAtIsNull(projectId, PageRequests.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))).map(TaskResponse::from));
     }
 
     @Transactional(readOnly = true)
@@ -135,7 +136,7 @@ public class TaskService {
 
         Task task = requireTaskInProject(projectId, taskId);
         saveAudit(task, currentUser.getId(), AuditAction.TASK_DELETED, null, null);
-        taskRepository.delete(task);
+        task.setDeletedAt(LocalDateTime.now());
     }
 
     private void validatePatchPayload(UpdateTaskRequest request) {
@@ -211,6 +212,7 @@ public class TaskService {
 
     private Task requireTaskInProject(UUID projectId, UUID taskId) {
         Task task = taskRepository.findById(taskId)
+                .filter(foundTask -> foundTask.getDeletedAt() == null)
                 .orElseThrow(() -> new NotFoundException(ErrorMessages.TASK_NOT_FOUND_CODE, ErrorMessages.TASK_NOT_FOUND_MESSAGE));
 
         if (!projectId.equals(task.getProjectId())) {
@@ -246,7 +248,7 @@ public class TaskService {
             return;
         }
 
-        long count = taskRepository.countByProjectIdAndUserIdAndStatus(projectId, assigneeId, TaskStatus.IN_PROGRESS);
+        long count = taskRepository.countByProjectIdAndUserIdAndStatusAndDeletedAtIsNull(projectId, assigneeId, TaskStatus.IN_PROGRESS);
 
         if (countsCurrentTask(currentTask, assigneeId)) count--;
         if (count >= WIP_LIMIT)  throw new BusinessException(ErrorMessages.TASK_WIP_LIMIT_EXCEEDED_CODE, ErrorMessages.TASK_WIP_LIMIT_EXCEEDED_MESSAGE);

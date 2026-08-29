@@ -17,6 +17,7 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
             from Project p
             join ProjectMember pm on pm.projectId = p.id
             where pm.userId = :userId
+              and p.deletedAt is null
             """)
     Page<Project> findAllByMemberUserId(@Param("userId") UUID userId, Pageable pageable);
 
@@ -26,6 +27,7 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
             join ProjectMember pm on pm.projectId = p.id
             where p.id = :projectId
               and pm.userId = :userId
+              and p.deletedAt is null
             """)
     Optional<Project> findByIdAndMemberUserId(@Param("projectId") UUID projectId, @Param("userId") UUID userId);
 }

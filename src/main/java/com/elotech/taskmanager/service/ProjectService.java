@@ -15,12 +15,14 @@ import org.springframework.data.domain.PageRequest;
 import com.elotech.taskmanager.policy.ProjectAccessPolicy;
 import com.elotech.taskmanager.repository.ProjectMemberRepository;
 import com.elotech.taskmanager.repository.ProjectRepository;
+import com.elotech.taskmanager.repository.TaskRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -32,12 +34,14 @@ public class ProjectService {
     private final ProjectMemberRepository projectMemberRepository;
     private final CurrentUserService currentUserService;
     private final ProjectAccessPolicy projectAccessPolicy;
+    private final TaskRepository taskRepository;
 
-    public ProjectService(ProjectRepository projectRepository, ProjectMemberRepository projectMemberRepository, CurrentUserService currentUserService, ProjectAccessPolicy projectAccessPolicy) {
+    public ProjectService(ProjectRepository projectRepository, ProjectMemberRepository projectMemberRepository, CurrentUserService currentUserService, ProjectAccessPolicy projectAccessPolicy, TaskRepository taskRepository) {
         this.projectRepository = projectRepository;
         this.projectMemberRepository = projectMemberRepository;
         this.currentUserService = currentUserService;
         this.projectAccessPolicy = projectAccessPolicy;
+        this.taskRepository = taskRepository;
     }
 
     @Transactional(readOnly = true)
@@ -95,5 +99,16 @@ public class ProjectService {
         }
 
         return ProjectResponse.from(project, MemberRole.ADMIN);
+    }
+
+
+    @Transactional
+    public void delete(UUID projectId) {
+        User currentUser = currentUserService.getCurrentUser();
+        Project project = projectAccessPolicy.requireAdmin(projectId, currentUser.getId());
+        LocalDateTime deletedAt = LocalDateTime.now();
+        project.setDeletedAt(deletedAt);
+
+        taskRepository.updateDeletedAtByProjectIdAndDeletedAtIsNull(projectId, deletedAt);
     }
 }

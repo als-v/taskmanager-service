@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -224,5 +225,19 @@ public class ProjectController {
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
     public ProjectResponse patch(@PathVariable UUID id, @Valid @RequestBody UpdateProjectRequest request) {
         return projectService.patch(id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(
+            summary = "Deletar projeto",
+            description = "Marca o projeto como deletado. Somente membros `ADMIN` do projeto podem deletar."
+    )
+    @ApiResponse(responseCode = "204", description = "Projeto deletado")
+    @ApiResponse(responseCode = "401", description = "Access token ausente, expirado ou inválido", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
+    @ApiResponse(responseCode = "403", description = "Usuário autenticado é membro, mas não é ADMIN do projeto", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
+    @ApiResponse(responseCode = "404", description = "Projeto inexistente ou inacessível", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
+    public void delete(@PathVariable UUID id) {
+        projectService.delete(id);
     }
 }

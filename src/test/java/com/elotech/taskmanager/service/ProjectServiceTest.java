@@ -12,6 +12,7 @@ import com.elotech.taskmanager.domain.error.BadRequestException;
 import com.elotech.taskmanager.policy.ProjectAccessPolicy;
 import com.elotech.taskmanager.repository.ProjectMemberRepository;
 import com.elotech.taskmanager.repository.ProjectRepository;
+import com.elotech.taskmanager.repository.TaskRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,13 +48,16 @@ class ProjectServiceTest {
     @Mock
     private ProjectAccessPolicy projectAccessPolicy;
 
+    @Mock
+    private TaskRepository taskRepository;
+
     private ProjectService projectService;
 
     private User currentUser;
 
     @BeforeEach
     void setUp() {
-        projectService = new ProjectService(projectRepository, projectMemberRepository, currentUserService, projectAccessPolicy);
+        projectService = new ProjectService(projectRepository, projectMemberRepository, currentUserService, projectAccessPolicy, taskRepository);
         currentUser = User.builder()
                 .id(UUID.randomUUID())
                 .name("Maria")

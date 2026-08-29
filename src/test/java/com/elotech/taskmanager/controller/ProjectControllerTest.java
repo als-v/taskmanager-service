@@ -123,9 +123,13 @@ class ProjectControllerTest {
     }
 
     @Test
-    void delete_shouldNotBeMapped() throws Exception {
-        mockMvc.perform(delete("/api/projects/{id}", UUID.randomUUID()))
-                .andExpect(status().isMethodNotAllowed());
+    void delete_shouldReturnNoContent() throws Exception {
+        UUID projectId = UUID.randomUUID();
+
+        mockMvc.perform(delete("/api/projects/{id}", projectId))
+                .andExpect(status().isNoContent());
+
+        verify(projectService).delete(projectId);
     }
 
     private ProjectResponse projectResponse(UUID projectId, UUID ownerId, MemberRole role) {

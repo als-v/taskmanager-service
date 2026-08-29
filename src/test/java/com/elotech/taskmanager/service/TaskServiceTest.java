@@ -18,6 +18,7 @@ import com.elotech.taskmanager.domain.enumeration.TaskStatus;
 import com.elotech.taskmanager.domain.error.BadRequestException;
 import com.elotech.taskmanager.domain.error.BusinessException;
 import com.elotech.taskmanager.domain.error.ForbiddenException;
+import com.elotech.taskmanager.domain.error.NotFoundException;
 import com.elotech.taskmanager.policy.ProjectAccessPolicy;
 import com.elotech.taskmanager.repository.NotificationRepository;
 import com.elotech.taskmanager.repository.ProjectMemberRepository;
@@ -184,7 +185,7 @@ class TaskServiceTest {
         given(currentUserService.getCurrentUser()).willReturn(currentUser);
         given(projectAccessPolicy.requireRole(projectId, currentUser.getId())).willReturn(MemberRole.ADMIN);
         given(projectMemberRepository.existsByProjectIdAndUserId(projectId, assigneeId)).willReturn(true);
-        given(taskRepository.countByProjectIdAndUserIdAndStatus(projectId, assigneeId, TaskStatus.IN_PROGRESS)).willReturn(5L);
+        given(taskRepository.countByProjectIdAndUserIdAndStatusAndDeletedAtIsNull(projectId, assigneeId, TaskStatus.IN_PROGRESS)).willReturn(5L);
 
         CreateTaskRequest request = new CreateTaskRequest(
                 "Criar login", null, TaskStatus.IN_PROGRESS, Priority.HIGH, assigneeId, null);
@@ -232,7 +233,22 @@ class TaskServiceTest {
         ArgumentCaptor<TaskLog> logCaptor = ArgumentCaptor.forClass(TaskLog.class);
         verify(taskLogRepository).save(logCaptor.capture());
         assertThat(logCaptor.getValue().getAction()).isEqualTo(AuditAction.TASK_DELETED);
-        verify(taskRepository).delete(task);
+        assertThat(task.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    void delete_shouldReturnNotFoundForAlreadyDeletedTask() {
+        Task task = task(TaskStatus.TODO, Priority.HIGH, assigneeId);
+        task.setDeletedAt(LocalDateTime.now());
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireMember(projectId, currentUser.getId())).willReturn(project());
+        given(projectAccessPolicy.requireRole(projectId, currentUser.getId())).willReturn(MemberRole.ADMIN);
+        given(taskRepository.findById(task.getId())).willReturn(Optional.of(task));
+
+        UUID taskId = task.getId();
+
+        assertThatThrownBy(() -> taskService.delete(projectId, taskId))
+                .isInstanceOf(NotFoundException.class);
     }
 
     @Test
@@ -252,14 +268,14 @@ class TaskServiceTest {
         Task task = task(TaskStatus.TODO, Priority.HIGH, null);
         given(currentUserService.getCurrentUser()).willReturn(currentUser);
         given(projectAccessPolicy.requireMember(projectId, currentUser.getId())).willReturn(project());
-        given(taskRepository.findAllByProjectId(eq(projectId), any(Pageable.class)))
+        given(taskRepository.findAllByProjectIdAndDeletedAtIsNull(eq(projectId), any(Pageable.class)))
                 .willReturn(new PageImpl<>(List.of(task)));
 
         PageResponse<TaskResponse> response = taskService.list(projectId, 0, 200);
 
         assertThat(response.content()).hasSize(1);
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(taskRepository).findAllByProjectId(eq(projectId), pageableCaptor.capture());
+        verify(taskRepository).findAllByProjectIdAndDeletedAtIsNull(eq(projectId), pageableCaptor.capture());
         assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(100);
         assertThat(pageableCaptor.getValue().getSort().getOrderFor("createdAt").isDescending()).isTrue();
     }
