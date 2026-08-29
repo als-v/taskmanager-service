@@ -1,7 +1,7 @@
 package com.elotech.taskmanager.security;
 
 import com.elotech.taskmanager.domain.entity.User;
-import com.elotech.taskmanager.repository.UserRepository;
+import com.elotech.taskmanager.repository.user.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

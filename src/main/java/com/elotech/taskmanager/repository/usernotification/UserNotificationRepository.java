@@ -1,4 +1,4 @@
-package com.elotech.taskmanager.repository;
+package com.elotech.taskmanager.repository.usernotification;
 
 import com.elotech.taskmanager.domain.dto.response.notification.NotificationResponse;
 import com.elotech.taskmanager.domain.entity.UserNotification;

@@ -1,4 +1,4 @@
-package com.elotech.taskmanager.repository;
+package com.elotech.taskmanager.repository.task;
 
 import com.elotech.taskmanager.domain.entity.Task;
 import com.elotech.taskmanager.domain.enumeration.TaskStatus;
@@ -7,12 +7,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.time.LocalDateTime;
 
 import java.util.UUID;
 
-public interface TaskRepository extends JpaRepository<Task, UUID> {
+public interface TaskRepository extends JpaRepository<Task, UUID>, JpaSpecificationExecutor<Task> {
 
     Page<Task> findAllByProjectIdAndDeletedAtIsNull(UUID projectId, Pageable pageable);
 

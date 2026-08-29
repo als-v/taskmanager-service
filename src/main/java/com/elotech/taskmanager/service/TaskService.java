@@ -1,5 +1,7 @@
 package com.elotech.taskmanager.service;
 
+import com.elotech.taskmanager.domain.criteria.TaskListCriteria;
+
 import com.elotech.taskmanager.domain.dto.request.task.CreateTaskRequest;
 import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskRequest;
 import com.elotech.taskmanager.domain.dto.response.common.PageResponse;
@@ -21,28 +23,43 @@ import com.elotech.taskmanager.pagination.PageRequests;
 import com.elotech.taskmanager.domain.error.ForbiddenException;
 import com.elotech.taskmanager.domain.error.NotFoundException;
 import com.elotech.taskmanager.policy.ProjectAccessPolicy;
-import com.elotech.taskmanager.repository.NotificationRepository;
-import com.elotech.taskmanager.repository.ProjectMemberRepository;
-import com.elotech.taskmanager.repository.TaskLogRepository;
-import com.elotech.taskmanager.repository.TaskRepository;
-import com.elotech.taskmanager.repository.UserNotificationRepository;
+import com.elotech.taskmanager.repository.notification.NotificationRepository;
+import com.elotech.taskmanager.repository.projectmember.ProjectMemberRepository;
+import com.elotech.taskmanager.repository.tasklog.TaskLogRepository;
+import com.elotech.taskmanager.repository.task.TaskRepository;
+import com.elotech.taskmanager.repository.task.TaskSpecifications;
+import com.elotech.taskmanager.repository.usernotification.UserNotificationRepository;
+import com.elotech.taskmanager.repository.user.UserRepository;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class TaskService {
     private static final int WIP_LIMIT = 5;
+    private static final Sort DEFAULT_LIST_SORT = Sort.by(Sort.Direction.DESC, "createdAt");
+    private static final Map<String, String> LIST_SORT_FIELDS = Map.of(
+            "created_at", "createdAt",
+            "due_date", "dueDate",
+            "priority", "priority",
+            "status", "status"
+    );
 
     private final TaskRepository taskRepository;
     private final TaskLogRepository taskLogRepository;
     private final NotificationRepository notificationRepository;
     private final UserNotificationRepository userNotificationRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final UserRepository userRepository;
     private final CurrentUserService currentUserService;
     private final ProjectAccessPolicy projectAccessPolicy;
 
@@ -52,6 +69,7 @@ public class TaskService {
             NotificationRepository notificationRepository,
             UserNotificationRepository userNotificationRepository,
             ProjectMemberRepository projectMemberRepository,
+            UserRepository userRepository,
             CurrentUserService currentUserService,
             ProjectAccessPolicy projectAccessPolicy
     ) {
@@ -60,16 +78,27 @@ public class TaskService {
         this.notificationRepository = notificationRepository;
         this.userNotificationRepository = userNotificationRepository;
         this.projectMemberRepository = projectMemberRepository;
+        this.userRepository = userRepository;
         this.currentUserService = currentUserService;
         this.projectAccessPolicy = projectAccessPolicy;
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<TaskResponse> list(UUID projectId, Integer page, Integer size) {
+    public PageResponse<TaskResponse> list(UUID projectId, TaskListCriteria criteria) {
         User currentUser = currentUserService.getCurrentUser();
         projectAccessPolicy.requireMember(projectId, currentUser.getId());
 
-        return PageResponse.from(taskRepository.findAllByProjectIdAndDeletedAtIsNull(projectId, PageRequests.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))).map(TaskResponse::from));
+        TaskListCriteria normalized = normalize(criteria);
+        validateDueDateRange(normalized.dueDateFrom(), normalized.dueDateTo());
+
+        Page<Task> page = taskRepository.findAll(
+                TaskSpecifications.byCriteria(projectId, normalized),
+                PageRequests.of(normalized.page(), normalized.size(), sort(normalized.sort()))
+        );
+
+        Map<UUID, User> assigneesById = findAssigneesByTasks(page.getContent());
+
+        return PageResponse.from(page.map(task -> TaskResponse.from(task, assigneesById.get(task.getUserId()))));
     }
 
     @Transactional(readOnly = true)
@@ -77,7 +106,8 @@ public class TaskService {
         User currentUser = currentUserService.getCurrentUser();
         projectAccessPolicy.requireMember(projectId, currentUser.getId());
 
-        return TaskResponse.from(requireTaskInProject(projectId, taskId));
+        Task task = requireTaskInProject(projectId, taskId);
+        return TaskResponse.from(task, resolveAssignee(task.getUserId()));
     }
 
     @Transactional
@@ -107,7 +137,7 @@ public class TaskService {
             notifyAssignee(saved, currentUser.getId());
         }
 
-        return TaskResponse.from(saved);
+        return TaskResponse.from(saved, resolveAssignee(saved.getUserId()));
     }
 
     @Transactional
@@ -121,7 +151,7 @@ public class TaskService {
         validatePatch(projectId, request, actorRole, task);
         applyPatch(task, request, currentUser.getId());
 
-        return TaskResponse.from(task);
+        return TaskResponse.from(task, resolveAssignee(task.getUserId()));
     }
 
     @Transactional
@@ -147,6 +177,68 @@ public class TaskService {
         if (request.title() != null && request.title().isBlank()) {
             throw new BadRequestException(ErrorMessages.TASK_TITLE_BLANK_CODE, ErrorMessages.TASK_TITLE_BLANK_MESSAGE);
         }
+    }
+
+
+    private TaskListCriteria normalize(TaskListCriteria criteria) {
+        if (criteria == null) return new TaskListCriteria(null, null, null, null, null, null, null, null, null, null, null);
+
+        return new TaskListCriteria(
+                criteria.status(),
+                criteria.priority(),
+                criteria.assigneeId(),
+                criteria.dueDateFrom(),
+                criteria.dueDateTo(),
+                blankToNull(criteria.title()),
+                blankToNull(criteria.description()),
+                blankToNull(criteria.sort()),
+                criteria.page(),
+                criteria.size(),
+                criteria.unassigned()
+        );
+    }
+
+    private String blankToNull(String value) {
+        if (value == null || value.isBlank()) return null;
+        return value.trim();
+    }
+
+    private void validateDueDateRange(LocalDateTime dueDateFrom, LocalDateTime dueDateTo) {
+        if (dueDateFrom != null && dueDateTo != null && dueDateFrom.isAfter(dueDateTo)) {
+            throw new BadRequestException(
+                    ErrorMessages.REQUEST_PARAMETER_INVALID_CODE,
+                    "due_date_from must be before or equal to due_date_to"
+            );
+        }
+    }
+
+    private Sort sort(String rawSort) {
+        if (rawSort == null) return DEFAULT_LIST_SORT;
+        String[] parts = rawSort.split(",");
+
+        if (parts.length != 2) {
+            throw new BadRequestException(
+                    ErrorMessages.REQUEST_PARAMETER_INVALID_CODE,
+                    "Sort must use field,direction format"
+            );
+        }
+
+        String property = LIST_SORT_FIELDS.get(parts[0].trim());
+
+        if (property == null) {
+            throw new BadRequestException(
+                    ErrorMessages.REQUEST_PARAMETER_INVALID_CODE,
+                    "Sort field is not allowed"
+            );
+        }
+
+        Sort.Direction direction = Sort.Direction.fromOptionalString(parts[1].trim())
+                .orElseThrow(() -> new BadRequestException(
+                        ErrorMessages.REQUEST_PARAMETER_INVALID_CODE,
+                        "Sort direction must be ASC or DESC"
+                ));
+
+        return Sort.by(direction, property);
     }
 
     private void validatePatch(UUID projectId, UpdateTaskRequest request, MemberRole actorRole, Task task) {
@@ -220,6 +312,21 @@ public class TaskService {
         }
 
         return task;
+    }
+
+    private User resolveAssignee(UUID userId) {
+        return userId == null ? null : userRepository.findById(userId).orElse(null);
+    }
+
+    private Map<UUID, User> findAssigneesByTasks(List<Task> tasks) {
+        List<UUID> userIds = tasks.stream()
+                .map(Task::getUserId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        return userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
     }
 
     private void validateAssignee(UUID projectId, UUID assigneeId) {

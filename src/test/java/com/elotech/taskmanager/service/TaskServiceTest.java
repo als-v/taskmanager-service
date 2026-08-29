@@ -1,5 +1,7 @@
 package com.elotech.taskmanager.service;
 
+import com.elotech.taskmanager.domain.criteria.TaskListCriteria;
+
 import com.elotech.taskmanager.domain.dto.request.task.CreateTaskRequest;
 import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskRequest;
 import com.elotech.taskmanager.domain.dto.response.common.PageResponse;
@@ -20,11 +22,12 @@ import com.elotech.taskmanager.domain.error.BusinessException;
 import com.elotech.taskmanager.domain.error.ForbiddenException;
 import com.elotech.taskmanager.domain.error.NotFoundException;
 import com.elotech.taskmanager.policy.ProjectAccessPolicy;
-import com.elotech.taskmanager.repository.NotificationRepository;
-import com.elotech.taskmanager.repository.ProjectMemberRepository;
-import com.elotech.taskmanager.repository.TaskLogRepository;
-import com.elotech.taskmanager.repository.TaskRepository;
-import com.elotech.taskmanager.repository.UserNotificationRepository;
+import com.elotech.taskmanager.repository.notification.NotificationRepository;
+import com.elotech.taskmanager.repository.projectmember.ProjectMemberRepository;
+import com.elotech.taskmanager.repository.tasklog.TaskLogRepository;
+import com.elotech.taskmanager.repository.task.TaskRepository;
+import com.elotech.taskmanager.repository.usernotification.UserNotificationRepository;
+import com.elotech.taskmanager.repository.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,6 +36,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -42,7 +46,6 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -61,6 +64,8 @@ class TaskServiceTest {
     @Mock
     private ProjectMemberRepository projectMemberRepository;
     @Mock
+    private UserRepository userRepository;
+    @Mock
     private CurrentUserService currentUserService;
     @Mock
     private ProjectAccessPolicy projectAccessPolicy;
@@ -69,6 +74,7 @@ class TaskServiceTest {
     private User currentUser;
     private UUID projectId;
     private UUID assigneeId;
+    private User assigneeUser;
 
     @BeforeEach
     void setUp() {
@@ -78,12 +84,14 @@ class TaskServiceTest {
                 notificationRepository,
                 userNotificationRepository,
                 projectMemberRepository,
+                userRepository,
                 currentUserService,
                 projectAccessPolicy
         );
         currentUser = User.builder().id(UUID.randomUUID()).name("Maria").email("maria@example.com").build();
         projectId = UUID.randomUUID();
         assigneeId = UUID.randomUUID();
+        assigneeUser = User.builder().id(assigneeId).name("Maria Silva").email("maria.silva@example.com").build();
     }
 
     @Test
@@ -100,7 +108,7 @@ class TaskServiceTest {
                 "Criar login", "JWT", TaskStatus.TODO, Priority.HIGH, null, null));
 
         assertThat(response.projectId()).isEqualTo(projectId);
-        assertThat(response.assigneeId()).isNull();
+        assertThat(response.assignee()).isNull();
         verify(taskLogRepository).save(any(TaskLog.class));
         verify(notificationRepository, never()).save(any(Notification.class));
     }
@@ -120,11 +128,14 @@ class TaskServiceTest {
             notification.setId(UUID.randomUUID());
             return notification;
         });
+        given(userRepository.findById(assigneeId)).willReturn(Optional.of(assigneeUser));
 
         TaskResponse response = taskService.create(projectId, new CreateTaskRequest(
                 "Criar login", "JWT", TaskStatus.TODO, Priority.HIGH, assigneeId, null));
 
-        assertThat(response.assigneeId()).isEqualTo(assigneeId);
+        assertThat(response.assignee().id()).isEqualTo(assigneeId);
+        assertThat(response.assignee().name()).isEqualTo(assigneeUser.getName());
+        assertThat(response.assignee().email()).isEqualTo(assigneeUser.getEmail());
         ArgumentCaptor<TaskLog> logCaptor = ArgumentCaptor.forClass(TaskLog.class);
         verify(taskLogRepository, org.mockito.Mockito.times(2)).save(logCaptor.capture());
         assertThat(logCaptor.getAllValues()).extracting(TaskLog::getAction)
@@ -201,12 +212,14 @@ class TaskServiceTest {
         given(projectAccessPolicy.requireRole(projectId, currentUser.getId())).willReturn(MemberRole.MEMBER);
         given(taskRepository.findById(task.getId())).willReturn(Optional.of(task));
         given(projectMemberRepository.existsByProjectIdAndUserId(projectId, assigneeId)).willReturn(true);
+        given(userRepository.findById(assigneeId)).willReturn(Optional.of(assigneeUser));
 
         TaskResponse response = taskService.patch(projectId, task.getId(), new UpdateTaskRequest(
                 "Novo título", null, TaskStatus.IN_PROGRESS, null, null, null));
 
         assertThat(response.title()).isEqualTo("Novo título");
         assertThat(response.status()).isEqualTo(TaskStatus.IN_PROGRESS);
+        assertThat(response.assignee().id()).isEqualTo(assigneeId);
         verify(taskLogRepository, org.mockito.Mockito.times(2)).save(any(TaskLog.class));
     }
 
@@ -268,16 +281,173 @@ class TaskServiceTest {
         Task task = task(TaskStatus.TODO, Priority.HIGH, null);
         given(currentUserService.getCurrentUser()).willReturn(currentUser);
         given(projectAccessPolicy.requireMember(projectId, currentUser.getId())).willReturn(project());
-        given(taskRepository.findAllByProjectIdAndDeletedAtIsNull(eq(projectId), any(Pageable.class)))
+        given(taskRepository.findAll(any(Specification.class), any(Pageable.class)))
                 .willReturn(new PageImpl<>(List.of(task)));
 
-        PageResponse<TaskResponse> response = taskService.list(projectId, 0, 200);
+        PageResponse<TaskResponse> response = taskService.list(projectId, new TaskListCriteria(null, null, null, null, null, null, null, null, 0, 200, null));
 
         assertThat(response.content()).hasSize(1);
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(taskRepository).findAllByProjectIdAndDeletedAtIsNull(eq(projectId), pageableCaptor.capture());
+        verify(taskRepository).findAll(any(Specification.class), pageableCaptor.capture());
         assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(100);
         assertThat(pageableCaptor.getValue().getSort().getOrderFor("createdAt").isDescending()).isTrue();
+    }
+
+    @Test
+    void listsTasksWithFiltersAndAllowedSort() {
+        Task task = task(TaskStatus.IN_PROGRESS, Priority.CRITICAL, assigneeId);
+        LocalDateTime dueDateFrom = LocalDateTime.of(2026, 2, 1, 0, 0);
+        LocalDateTime dueDateTo = LocalDateTime.of(2026, 2, 28, 23, 59);
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireMember(projectId, currentUser.getId())).willReturn(project());
+        given(taskRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .willReturn(new PageImpl<>(List.of(task)));
+
+        taskService.list(projectId, new TaskListCriteria(
+                TaskStatus.IN_PROGRESS,
+                Priority.CRITICAL,
+                assigneeId,
+                dueDateFrom,
+                dueDateTo,
+                " login ",
+                " jwt ",
+                "due_date,asc",
+                1,
+                50,
+                null
+        ));
+
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(taskRepository).findAll(any(Specification.class), pageableCaptor.capture());
+        assertThat(pageableCaptor.getValue().getPageNumber()).isEqualTo(1);
+        assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(50);
+        assertThat(pageableCaptor.getValue().getSort().getOrderFor("dueDate").isAscending()).isTrue();
+    }
+
+    @Test
+    void acceptsAllowedTaskListSorts() {
+        Task task = task(TaskStatus.TODO, Priority.HIGH, null);
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireMember(projectId, currentUser.getId())).willReturn(project());
+        given(taskRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .willReturn(new PageImpl<>(List.of(task)));
+
+        taskService.list(projectId, new TaskListCriteria(null, null, null, null, null, null, null, "priority,desc", 0, 20, null));
+        taskService.list(projectId, new TaskListCriteria(null, null, null, null, null, null, null, "status,asc", 0, 20, null));
+
+        verify(taskRepository, org.mockito.Mockito.times(2)).findAll(any(Specification.class), any(Pageable.class));
+    }
+
+    @Test
+    void rejectsTaskListSortFieldOutsideWhitelist() {
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireMember(projectId, currentUser.getId())).willReturn(project());
+
+        TaskListCriteria criteria = new TaskListCriteria(null, null, null, null, null, null, null, "title,asc", 0, 20, null);
+        assertThatThrownBy(() -> taskService.list(projectId, criteria))
+                .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void rejectsTaskListSortDirectionOutsideWhitelist() {
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireMember(projectId, currentUser.getId())).willReturn(project());
+
+        TaskListCriteria criteria = new TaskListCriteria(null, null, null, null, null, null, null, "status,up", 0, 20, null);
+        assertThatThrownBy(() -> taskService.list(projectId, criteria))
+                .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void rejectsTaskListInvertedDueDateRange() {
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireMember(projectId, currentUser.getId())).willReturn(project());
+
+        TaskListCriteria criteria = new TaskListCriteria(
+                null, null, null, LocalDateTime.of(2026, 3, 1, 0, 0), LocalDateTime.of(2026, 2, 1, 0, 0), null, null, null, 0, 20, null
+        );
+        assertThatThrownBy(() -> taskService.list(projectId, criteria))
+                .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void getReturnsAssigneeWhenTaskHasResponsible() {
+        Task task = task(TaskStatus.TODO, Priority.HIGH, assigneeId);
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireMember(projectId, currentUser.getId())).willReturn(project());
+        given(taskRepository.findById(task.getId())).willReturn(Optional.of(task));
+        given(userRepository.findById(assigneeId)).willReturn(Optional.of(assigneeUser));
+
+        TaskResponse response = taskService.get(projectId, task.getId());
+
+        assertThat(response.assignee().id()).isEqualTo(assigneeId);
+        assertThat(response.assignee().name()).isEqualTo(assigneeUser.getName());
+        assertThat(response.assignee().email()).isEqualTo(assigneeUser.getEmail());
+    }
+
+    @Test
+    void getReturnsNullAssigneeWhenTaskHasNoResponsible() {
+        Task task = task(TaskStatus.TODO, Priority.HIGH, null);
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireMember(projectId, currentUser.getId())).willReturn(project());
+        given(taskRepository.findById(task.getId())).willReturn(Optional.of(task));
+
+        TaskResponse response = taskService.get(projectId, task.getId());
+
+        assertThat(response.assignee()).isNull();
+    }
+
+    @Test
+    void getReturnsNullAssigneeWhenAssigneeUserNoLongerExists() {
+        Task task = task(TaskStatus.TODO, Priority.HIGH, assigneeId);
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireMember(projectId, currentUser.getId())).willReturn(project());
+        given(taskRepository.findById(task.getId())).willReturn(Optional.of(task));
+        given(userRepository.findById(assigneeId)).willReturn(Optional.empty());
+
+        TaskResponse response = taskService.get(projectId, task.getId());
+
+        assertThat(response.assignee()).isNull();
+    }
+
+    @Test
+    void listResolvesAssigneesInBatchForEachTask() {
+        UUID otherAssigneeId = UUID.randomUUID();
+        User otherAssigneeUser = User.builder().id(otherAssigneeId).name("João").email("joao@example.com").build();
+        Task assignedTask = task(TaskStatus.TODO, Priority.HIGH, assigneeId);
+        Task otherAssignedTask = task(TaskStatus.TODO, Priority.HIGH, otherAssigneeId);
+        Task unassignedTask = task(TaskStatus.TODO, Priority.HIGH, null);
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireMember(projectId, currentUser.getId())).willReturn(project());
+        given(taskRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .willReturn(new PageImpl<>(List.of(assignedTask, otherAssignedTask, unassignedTask)));
+        given(userRepository.findAllById(any())).willReturn(List.of(assigneeUser, otherAssigneeUser));
+
+        PageResponse<TaskResponse> response = taskService.list(projectId,
+                new TaskListCriteria(null, null, null, null, null, null, null, null, 0, 200, null));
+
+        assertThat(response.content()).extracting(TaskResponse::id, r -> r.assignee() == null ? null : r.assignee().id())
+                .containsExactlyInAnyOrder(
+                        org.assertj.core.groups.Tuple.tuple(assignedTask.getId(), assigneeId),
+                        org.assertj.core.groups.Tuple.tuple(otherAssignedTask.getId(), otherAssigneeId),
+                        org.assertj.core.groups.Tuple.tuple(unassignedTask.getId(), null)
+                );
+    }
+
+    @Test
+    void listReturnsNullAssigneeWhenTaskUserIdIsInconsistent() {
+        Task task = task(TaskStatus.TODO, Priority.HIGH, assigneeId);
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireMember(projectId, currentUser.getId())).willReturn(project());
+        given(taskRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .willReturn(new PageImpl<>(List.of(task)));
+        given(userRepository.findAllById(any())).willReturn(List.of());
+
+        PageResponse<TaskResponse> response = taskService.list(projectId,
+                new TaskListCriteria(null, null, null, null, null, null, null, null, 0, 200, null));
+
+        assertThat(response.content()).hasSize(1);
+        assertThat(response.content().get(0).assignee()).isNull();
     }
 
     private Project project() {

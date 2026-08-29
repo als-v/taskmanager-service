@@ -1,4 +1,4 @@
-package com.elotech.taskmanager.repository;
+package com.elotech.taskmanager.repository.notification;
 
 import com.elotech.taskmanager.domain.entity.Notification;
 import org.springframework.data.jpa.repository.JpaRepository;

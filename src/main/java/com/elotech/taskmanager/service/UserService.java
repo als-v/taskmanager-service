@@ -6,7 +6,7 @@ import com.elotech.taskmanager.domain.entity.User;
 import com.elotech.taskmanager.pagination.PageRequests;
 import org.springframework.data.domain.PageRequest;
 import com.elotech.taskmanager.policy.ProjectAccessPolicy;
-import com.elotech.taskmanager.repository.UserRepository;
+import com.elotech.taskmanager.repository.user.UserRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

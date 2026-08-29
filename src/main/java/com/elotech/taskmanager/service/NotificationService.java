@@ -9,8 +9,8 @@ import com.elotech.taskmanager.domain.error.ErrorMessages;
 import com.elotech.taskmanager.pagination.PageRequests;
 import org.springframework.data.domain.PageRequest;
 import com.elotech.taskmanager.domain.error.NotFoundException;
-import com.elotech.taskmanager.repository.NotificationRepository;
-import com.elotech.taskmanager.repository.UserNotificationRepository;
+import com.elotech.taskmanager.repository.notification.NotificationRepository;
+import com.elotech.taskmanager.repository.usernotification.UserNotificationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

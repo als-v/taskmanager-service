@@ -5,8 +5,8 @@ import com.elotech.taskmanager.domain.enumeration.MemberRole;
 import com.elotech.taskmanager.domain.error.ErrorMessages;
 import com.elotech.taskmanager.domain.error.ForbiddenException;
 import com.elotech.taskmanager.domain.error.NotFoundException;
-import com.elotech.taskmanager.repository.ProjectMemberRepository;
-import com.elotech.taskmanager.repository.ProjectRepository;
+import com.elotech.taskmanager.repository.projectmember.ProjectMemberRepository;
+import com.elotech.taskmanager.repository.project.ProjectRepository;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;

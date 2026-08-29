@@ -5,7 +5,7 @@ import com.elotech.taskmanager.domain.error.ConflictException;
 import com.elotech.taskmanager.domain.error.ErrorMessages;
 import com.elotech.taskmanager.domain.error.UnauthorizedException;
 import com.elotech.taskmanager.domain.entity.User;
-import com.elotech.taskmanager.repository.UserRepository;
+import com.elotech.taskmanager.repository.user.UserRepository;
 import com.elotech.taskmanager.security.JwtService;
 import com.elotech.taskmanager.security.RefreshTokenStore;
 import com.elotech.taskmanager.domain.dto.response.auth.AuthResponse;

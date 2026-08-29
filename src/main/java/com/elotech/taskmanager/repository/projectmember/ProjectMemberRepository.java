@@ -1,4 +1,4 @@
-package com.elotech.taskmanager.repository;
+package com.elotech.taskmanager.repository.projectmember;
 
 import com.elotech.taskmanager.domain.dto.response.member.ProjectMemberResponse;
 import com.elotech.taskmanager.domain.entity.ProjectMember;

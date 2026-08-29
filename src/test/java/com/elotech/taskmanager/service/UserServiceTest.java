@@ -6,7 +6,7 @@ import com.elotech.taskmanager.domain.entity.Project;
 import com.elotech.taskmanager.domain.entity.User;
 import com.elotech.taskmanager.domain.error.BadRequestException;
 import com.elotech.taskmanager.policy.ProjectAccessPolicy;
-import com.elotech.taskmanager.repository.UserRepository;
+import com.elotech.taskmanager.repository.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

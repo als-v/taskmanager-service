@@ -3,7 +3,7 @@ package com.elotech.taskmanager.service;
 import com.elotech.taskmanager.domain.entity.User;
 import com.elotech.taskmanager.domain.error.ErrorMessages;
 import com.elotech.taskmanager.domain.error.UnauthorizedException;
-import com.elotech.taskmanager.repository.UserRepository;
+import com.elotech.taskmanager.repository.user.UserRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;

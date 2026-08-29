@@ -11,7 +11,7 @@ import com.elotech.taskmanager.domain.error.BadRequestException;
 import com.elotech.taskmanager.domain.error.ErrorMessages;
 import com.elotech.taskmanager.domain.error.NotFoundException;
 import com.elotech.taskmanager.policy.ProjectAccessPolicy;
-import com.elotech.taskmanager.repository.TaskLogRepository;
+import com.elotech.taskmanager.repository.tasklog.TaskLogRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

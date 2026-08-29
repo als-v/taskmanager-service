@@ -1,0 +1,199 @@
+package com.elotech.taskmanager.repository;
+
+import com.elotech.taskmanager.domain.criteria.TaskListCriteria;
+
+import com.elotech.taskmanager.domain.entity.Project;
+import com.elotech.taskmanager.domain.entity.Task;
+import com.elotech.taskmanager.domain.entity.User;
+import com.elotech.taskmanager.domain.enumeration.Priority;
+import com.elotech.taskmanager.domain.enumeration.TaskStatus;
+import com.elotech.taskmanager.repository.project.ProjectRepository;
+import com.elotech.taskmanager.repository.task.TaskRepository;
+import com.elotech.taskmanager.repository.task.TaskSpecifications;
+import com.elotech.taskmanager.repository.user.UserRepository;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.test.context.ActiveProfiles;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@DataJpaTest
+@ActiveProfiles("test")
+class TaskRepositoryTest {
+
+    @Autowired
+    private TaskRepository taskRepository;
+
+    @Autowired
+    private ProjectRepository projectRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+
+    @Test
+    void findAllByCriteriaAcceptsNullOptionalFilters() {
+        User owner = userRepository.save(user("Owner", "owner-task-null-filters@example.com"));
+        Project project = projectRepository.save(project(owner.getId()));
+        Task expected = task(project.getId(), owner.getId(), "Listar tasks", null, TaskStatus.TODO, Priority.MEDIUM, null, null);
+        taskRepository.save(expected);
+
+        Page<Task> response = taskRepository.findAll(
+                TaskSpecifications.byCriteria(project.getId(), new TaskListCriteria(null, null, null, null, null, null, null, null, null, null, null)),
+                PageRequest.of(0, 20)
+        );
+
+        assertThat(response.getContent())
+                .extracting(Task::getId)
+                .containsExactly(expected.getId());
+    }
+
+    @Test
+    void findAllByCriteriaFiltersByTitleAndDescriptionIgnoringCase() {
+        User owner = userRepository.save(user("Owner", "owner-task-filter@example.com"));
+        Project project = projectRepository.save(project(owner.getId()));
+        Task expected = task(project.getId(), owner.getId(), "Implementar Login", "Criar REFRESH token", TaskStatus.TODO, Priority.HIGH, LocalDateTime.of(2026, 2, 15, 18, 0), null);
+        taskRepository.save(expected);
+        taskRepository.save(task(project.getId(), owner.getId(), "Ajustar relatório", "Listar tarefas", TaskStatus.TODO, Priority.HIGH, LocalDateTime.of(2026, 2, 16, 18, 0), null));
+
+        Page<Task> response = taskRepository.findAll(
+                TaskSpecifications.byCriteria(project.getId(), new TaskListCriteria(null, null, null, null, null, "login", "refresh", null, null, null, null)),
+                PageRequest.of(0, 20)
+        );
+
+        assertThat(response.getContent())
+                .extracting(Task::getId)
+                .containsExactly(expected.getId());
+    }
+
+    @Test
+    void findAllByCriteriaCombinesFiltersAndIgnoresSoftDeletedTasks() {
+        User owner = userRepository.save(user("Owner", "owner-task-combined@example.com"));
+        User assignee = userRepository.save(user("Assignee", "assignee-task-combined@example.com"));
+        Project project = projectRepository.save(project(owner.getId()));
+        LocalDateTime from = LocalDateTime.of(2026, 2, 1, 0, 0);
+        LocalDateTime to = LocalDateTime.of(2026, 2, 28, 23, 59);
+        Task expected = task(project.getId(), assignee.getId(), "API de tasks", "Busca por descricao", TaskStatus.IN_PROGRESS, Priority.CRITICAL, LocalDateTime.of(2026, 2, 15, 18, 0), null);
+        taskRepository.save(expected);
+        taskRepository.save(task(project.getId(), assignee.getId(), "API de tasks removida", "Busca por descricao", TaskStatus.IN_PROGRESS, Priority.CRITICAL, LocalDateTime.of(2026, 2, 15, 18, 0), LocalDateTime.now()));
+        taskRepository.save(task(project.getId(), assignee.getId(), "API de tasks", "Busca por descricao", TaskStatus.TODO, Priority.CRITICAL, LocalDateTime.of(2026, 2, 15, 18, 0), null));
+
+        Page<Task> response = taskRepository.findAll(
+                TaskSpecifications.byCriteria(project.getId(), new TaskListCriteria(
+                        TaskStatus.IN_PROGRESS, Priority.CRITICAL, assignee.getId(), from, to, "tasks", "descricao", null, null, null, null
+                )),
+                PageRequest.of(0, 20)
+        );
+
+        assertThat(response.getContent())
+                .extracting(Task::getId)
+                .containsExactly(expected.getId());
+    }
+
+    @Test
+    void findAllByCriteriaFiltersUnassignedTasks() {
+        User owner = userRepository.save(user("Owner", "owner-task-unassigned@example.com"));
+        User assignee = userRepository.save(user("Assignee", "assignee-task-unassigned@example.com"));
+        Project project = projectRepository.save(project(owner.getId()));
+        Task unassigned = task(project.getId(), null, "Sem responsavel", null, TaskStatus.TODO, Priority.MEDIUM, null, null);
+        Task assigned = task(project.getId(), assignee.getId(), "Com responsavel", null, TaskStatus.TODO, Priority.MEDIUM, null, null);
+        taskRepository.save(unassigned);
+        taskRepository.save(assigned);
+
+        Page<Task> response = taskRepository.findAll(
+                TaskSpecifications.byCriteria(project.getId(), new TaskListCriteria(
+                        null, null, null, null, null, null, null, null, null, null, true
+                )),
+                PageRequest.of(0, 20)
+        );
+
+        assertThat(response.getContent())
+                .extracting(Task::getId)
+                .containsExactly(unassigned.getId());
+    }
+
+    @Test
+    void findAllByCriteriaFiltersAssignedTasksWhenUnassignedFalse() {
+        User owner = userRepository.save(user("Owner", "owner-task-unassigned-false@example.com"));
+        User assignee = userRepository.save(user("Assignee", "assignee-task-unassigned-false@example.com"));
+        Project project = projectRepository.save(project(owner.getId()));
+        Task assigned = task(project.getId(), assignee.getId(), "Com responsavel", null, TaskStatus.TODO, Priority.MEDIUM, null, null);
+        taskRepository.save(assigned);
+        taskRepository.save(task(project.getId(), null, "Sem responsavel", null, TaskStatus.TODO, Priority.MEDIUM, null, null));
+
+        Page<Task> response = taskRepository.findAll(
+                TaskSpecifications.byCriteria(project.getId(), new TaskListCriteria(
+                        null, null, null, null, null, null, null, null, null, null, false
+                )),
+                PageRequest.of(0, 20)
+        );
+
+        assertThat(response.getContent())
+                .extracting(Task::getId)
+                .containsExactly(assigned.getId());
+    }
+
+    @Test
+    void findAllByCriteriaAssigneeIdTakesPrecedenceOverUnassignedFalse() {
+        User owner = userRepository.save(user("Owner", "owner-task-unassigned-precedence@example.com"));
+        User assignee = userRepository.save(user("Assignee", "assignee-task-unassigned-precedence@example.com"));
+        Project project = projectRepository.save(project(owner.getId()));
+        Task assigned = task(project.getId(), assignee.getId(), "Com responsavel", null, TaskStatus.TODO, Priority.MEDIUM, null, null);
+        taskRepository.save(assigned);
+
+        Page<Task> response = taskRepository.findAll(
+                TaskSpecifications.byCriteria(project.getId(), new TaskListCriteria(
+                        null, null, assignee.getId(), null, null, null, null, null, null, null, false
+                )),
+                PageRequest.of(0, 20)
+        );
+
+        assertThat(response.getContent())
+                .extracting(Task::getId)
+                .containsExactly(assigned.getId());
+    }
+
+    private User user(String name, String email) {
+        return User.builder()
+                .name(name)
+                .email(email)
+                .password("hash")
+                .build();
+    }
+
+    private Project project(UUID ownerId) {
+        return Project.builder()
+                .name("Projeto")
+                .description("Descricao")
+                .ownerId(ownerId)
+                .build();
+    }
+
+    private Task task(
+            UUID projectId,
+            UUID assigneeId,
+            String title,
+            String description,
+            TaskStatus status,
+            Priority priority,
+            LocalDateTime dueDate,
+            LocalDateTime deletedAt
+    ) {
+        return Task.builder()
+                .projectId(projectId)
+                .userId(assigneeId)
+                .title(title)
+                .description(description)
+                .status(status)
+                .priority(priority)
+                .dueDate(dueDate)
+                .deletedAt(deletedAt)
+                .build();
+    }
+}

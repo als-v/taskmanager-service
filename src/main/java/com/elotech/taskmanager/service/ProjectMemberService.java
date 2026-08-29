@@ -16,10 +16,10 @@ import com.elotech.taskmanager.domain.error.ErrorMessages;
 import com.elotech.taskmanager.pagination.PageRequests;
 import com.elotech.taskmanager.domain.error.NotFoundException;
 import com.elotech.taskmanager.policy.ProjectAccessPolicy;
-import com.elotech.taskmanager.repository.NotificationRepository;
-import com.elotech.taskmanager.repository.ProjectMemberRepository;
-import com.elotech.taskmanager.repository.UserNotificationRepository;
-import com.elotech.taskmanager.repository.UserRepository;
+import com.elotech.taskmanager.repository.notification.NotificationRepository;
+import com.elotech.taskmanager.repository.projectmember.ProjectMemberRepository;
+import com.elotech.taskmanager.repository.usernotification.UserNotificationRepository;
+import com.elotech.taskmanager.repository.user.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

@@ -1,4 +1,4 @@
-package com.elotech.taskmanager.repository;
+package com.elotech.taskmanager.repository.tasklog;
 
 import com.elotech.taskmanager.domain.entity.TaskLog;
 import com.elotech.taskmanager.domain.enumeration.AuditAction;

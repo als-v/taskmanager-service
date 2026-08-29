@@ -9,7 +9,7 @@ import com.elotech.taskmanager.domain.dto.request.auth.SignUpRequest;
 import com.elotech.taskmanager.domain.dto.response.auth.AuthResponse;
 import com.elotech.taskmanager.domain.dto.response.auth.UserResponse;
 import com.elotech.taskmanager.domain.entity.User;
-import com.elotech.taskmanager.repository.UserRepository;
+import com.elotech.taskmanager.repository.user.UserRepository;
 import com.elotech.taskmanager.security.JwtService;
 import com.elotech.taskmanager.security.RefreshTokenStore;
 import io.jsonwebtoken.Claims;

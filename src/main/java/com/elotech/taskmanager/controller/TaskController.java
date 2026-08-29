@@ -4,7 +4,10 @@ import com.elotech.taskmanager.domain.dto.request.task.CreateTaskRequest;
 import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskRequest;
 import com.elotech.taskmanager.domain.dto.response.common.PageResponse;
 import com.elotech.taskmanager.domain.dto.response.task.TaskResponse;
+import com.elotech.taskmanager.domain.enumeration.Priority;
+import com.elotech.taskmanager.domain.enumeration.TaskStatus;
 import com.elotech.taskmanager.domain.error.ApiProblem;
+import com.elotech.taskmanager.domain.criteria.TaskListCriteria;
 import com.elotech.taskmanager.service.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -13,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @RestController
@@ -41,7 +46,7 @@ public class TaskController {
     @GetMapping
     @Operation(
             summary = "Listar tasks do projeto",
-            description = "Retorna uma página de tasks do projeto quando o usuário autenticado é membro `ADMIN` ou `MEMBER`. A ordenação é fixa por `createdAt DESC`."
+            description = "Retorna uma página de tasks não deletadas do projeto quando o usuário autenticado é membro `ADMIN` ou `MEMBER`. Permite filtros por `status`, `priority`, `assignee_id`, `due_date_from`, `due_date_to`, buscas parciais por `title` e `description` e `unassigned`. O parâmetro `unassigned` é booleano e tem semântica nas duas direções: `unassigned=true` retorna apenas tasks sem responsável (`assignee_id IS NULL`); `unassigned=false` retorna apenas tasks com responsável (`assignee_id IS NOT NULL`); ausente não filtra por responsável. Quando `assignee_id` também é informado, ele tem precedência sobre `unassigned`. O parâmetro `sort` aceita `created_at`, `due_date`, `priority` ou `status` no formato `campo,direcao`; o padrão é `created_at,desc`."
     )
     @ApiResponse(responseCode = "200", description = "Página de tasks", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "tasks-page", value = """
                     {
@@ -53,7 +58,11 @@ public class TaskController {
                                 "description": "Criar login e refresh token",
                                 "status": "TODO",
                                 "priority": "HIGH",
-                                "assignee_id": "0d949a6f-6dd3-49c5-b0ff-7e7f69dcb192",
+                                "assignee": {
+                                    "id": "0d949a6f-6dd3-49c5-b0ff-7e7f69dcb192",
+                                    "name": "Maria Silva",
+                                    "email": "maria@example.com"
+                                },
                                 "due_date": "2026-02-15T18:00:00",
                                 "created_at": "2026-01-10T09:00:00",
                                 "updated_at": "2026-01-10T09:00:00"
@@ -70,10 +79,31 @@ public class TaskController {
     @ApiResponse(responseCode = "404", description = "Projeto inexistente ou inacessível", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
     public PageResponse<TaskResponse> list(
             @PathVariable UUID projectId,
+            @RequestParam(required = false) TaskStatus status,
+            @RequestParam(required = false) Priority priority,
+            @RequestParam(name = "assignee_id", required = false) UUID assigneeId,
+            @RequestParam(required = false) Boolean unassigned,
+            @RequestParam(name = "due_date_from", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dueDateFrom,
+            @RequestParam(name = "due_date_to", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dueDateTo,
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false) String sort,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size
     ) {
-        return taskService.list(projectId, page, size);
+        return taskService.list(projectId, new TaskListCriteria(
+                status,
+                priority,
+                assigneeId,
+                dueDateFrom,
+                dueDateTo,
+                title,
+                description,
+                sort,
+                page,
+                size,
+                unassigned
+        ));
     }
 
     @GetMapping("/{taskId}")

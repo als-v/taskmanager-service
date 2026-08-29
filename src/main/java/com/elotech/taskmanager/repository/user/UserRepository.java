@@ -1,4 +1,4 @@
-package com.elotech.taskmanager.repository;
+package com.elotech.taskmanager.repository.user;
 
 import com.elotech.taskmanager.domain.entity.User;
 import org.springframework.data.domain.Page;

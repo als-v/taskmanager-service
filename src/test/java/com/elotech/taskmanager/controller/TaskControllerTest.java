@@ -3,6 +3,7 @@ package com.elotech.taskmanager.controller;
 import com.elotech.taskmanager.domain.dto.request.task.CreateTaskRequest;
 import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskRequest;
 import com.elotech.taskmanager.domain.dto.response.common.PageResponse;
+import com.elotech.taskmanager.domain.dto.response.task.TaskAssigneeResponse;
 import com.elotech.taskmanager.domain.dto.response.task.TaskResponse;
 import com.elotech.taskmanager.domain.enumeration.Priority;
 import com.elotech.taskmanager.domain.enumeration.TaskStatus;
@@ -11,6 +12,7 @@ import com.elotech.taskmanager.domain.error.ErrorMessages;
 import com.elotech.taskmanager.domain.error.ForbiddenException;
 import com.elotech.taskmanager.domain.error.NotFoundException;
 import com.elotech.taskmanager.domain.error.UnauthorizedException;
+import com.elotech.taskmanager.domain.criteria.TaskListCriteria;
 import com.elotech.taskmanager.service.TaskService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -29,6 +31,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -53,18 +56,57 @@ class TaskControllerTest {
     void listsTasks() throws Exception {
         UUID projectId = UUID.randomUUID();
         TaskResponse task = taskResponse(projectId, UUID.randomUUID(), UUID.randomUUID());
-        given(taskService.list(projectId, 0, 20)).willReturn(new PageResponse<>(List.of(task), 0, 20, 1, 1));
+        given(taskService.list(eq(projectId), any(TaskListCriteria.class))).willReturn(new PageResponse<>(List.of(task), 0, 20, 1, 1));
 
         mockMvc.perform(get("/api/projects/{projectId}/tasks", projectId)
-                        .param("page", "0")
-                        .param("size", "20"))
+                .param("status", "TODO")
+                .param("priority", "HIGH")
+                .param("assignee_id", task.assignee().id().toString())
+                .param("due_date_from", "2026-02-01T00:00:00")
+                .param("due_date_to", "2026-02-28T23:59:59")
+                .param("title", "login")
+                .param("description", "jwt")
+                .param("sort", "due_date,asc")
+                .param("page", "0")
+                .param("size", "20"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].id").value(task.id().toString()))
-                .andExpect(jsonPath("$.content[0].assignee_id").value(task.assigneeId().toString()))
+                .andExpect(jsonPath("$.content[0].assignee.id").value(task.assignee().id().toString()))
+                .andExpect(jsonPath("$.content[0].assignee.name").value(task.assignee().name()))
+                .andExpect(jsonPath("$.content[0].assignee.email").value(task.assignee().email()))
                 .andExpect(jsonPath("$.page").value(0))
                 .andExpect(jsonPath("$.size").value(20))
                 .andExpect(jsonPath("$.total_elements").value(1))
                 .andExpect(jsonPath("$.total_pages").value(1));
+
+        org.mockito.ArgumentCaptor<TaskListCriteria> criteriaCaptor = org.mockito.ArgumentCaptor.forClass(TaskListCriteria.class);
+        verify(taskService).list(eq(projectId), criteriaCaptor.capture());
+        TaskListCriteria criteria = criteriaCaptor.getValue();
+        assertThat(criteria.status()).isEqualTo(TaskStatus.TODO);
+        assertThat(criteria.priority()).isEqualTo(Priority.HIGH);
+        assertThat(criteria.assigneeId()).isEqualTo(task.assignee().id());
+        assertThat(criteria.dueDateFrom()).isEqualTo(LocalDateTime.of(2026, 2, 1, 0, 0));
+        assertThat(criteria.dueDateTo()).isEqualTo(LocalDateTime.of(2026, 2, 28, 23, 59, 59));
+        assertThat(criteria.title()).isEqualTo("login");
+        assertThat(criteria.description()).isEqualTo("jwt");
+        assertThat(criteria.sort()).isEqualTo("due_date,asc");
+        assertThat(criteria.page()).isZero();
+        assertThat(criteria.size()).isEqualTo(20);
+    }
+
+    @Test
+    void listsTasksWithUnassignedFilter() throws Exception {
+        UUID projectId = UUID.randomUUID();
+        TaskResponse task = taskResponse(projectId, UUID.randomUUID(), null);
+        given(taskService.list(eq(projectId), any(TaskListCriteria.class))).willReturn(new PageResponse<>(List.of(task), 0, 20, 1, 1));
+
+        mockMvc.perform(get("/api/projects/{projectId}/tasks", projectId)
+                        .param("unassigned", "true"))
+                .andExpect(status().isOk());
+
+        org.mockito.ArgumentCaptor<TaskListCriteria> criteriaCaptor = org.mockito.ArgumentCaptor.forClass(TaskListCriteria.class);
+        verify(taskService).list(eq(projectId), criteriaCaptor.capture());
+        assertThat(criteriaCaptor.getValue().unassigned()).isTrue();
     }
 
     @Test
@@ -153,7 +195,7 @@ class TaskControllerTest {
     @Test
     void mapsUnauthorizedTo401() throws Exception {
         UUID projectId = UUID.randomUUID();
-        given(taskService.list(projectId, null, null))
+        given(taskService.list(eq(projectId), any(TaskListCriteria.class)))
                 .willThrow(new UnauthorizedException(ErrorMessages.AUTH_UNAUTHENTICATED_CODE, ErrorMessages.AUTH_UNAUTHENTICATED_MESSAGE));
 
         mockMvc.perform(get("/api/projects/{projectId}/tasks", projectId))
@@ -188,6 +230,10 @@ class TaskControllerTest {
     }
 
     private TaskResponse taskResponse(UUID projectId, UUID taskId, UUID assigneeId) {
+        TaskAssigneeResponse assignee = assigneeId == null
+                ? null
+                : new TaskAssigneeResponse(assigneeId, "Maria Silva", "maria@example.com");
+
         return new TaskResponse(
                 taskId,
                 projectId,
@@ -195,7 +241,7 @@ class TaskControllerTest {
                 "JWT",
                 TaskStatus.TODO,
                 Priority.HIGH,
-                assigneeId,
+                assignee,
                 LocalDateTime.of(2026, 2, 15, 18, 0),
                 LocalDateTime.of(2026, 1, 10, 9, 0),
                 LocalDateTime.of(2026, 1, 10, 9, 0)

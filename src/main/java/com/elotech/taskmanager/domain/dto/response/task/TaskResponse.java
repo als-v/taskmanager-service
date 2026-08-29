@@ -1,6 +1,7 @@
 package com.elotech.taskmanager.domain.dto.response.task;
 
 import com.elotech.taskmanager.domain.entity.Task;
+import com.elotech.taskmanager.domain.entity.User;
 import com.elotech.taskmanager.domain.enumeration.Priority;
 import com.elotech.taskmanager.domain.enumeration.TaskStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -27,8 +28,8 @@ public record TaskResponse(
         @Schema(description = "Prioridade atual da task", example = "HIGH")
         Priority priority,
 
-        @Schema(description = "Usuário responsável pela task")
-        UUID assigneeId,
+        @Schema(description = "Usuário responsável pela task, ou null quando não há responsável")
+        TaskAssigneeResponse assignee,
 
         @Schema(description = "Prazo da task")
         LocalDateTime dueDate,
@@ -39,7 +40,7 @@ public record TaskResponse(
         @Schema(description = "Data da última atualização")
         LocalDateTime updatedAt
 ) {
-    public static TaskResponse from(Task task) {
+    public static TaskResponse from(Task task, User assignee) {
         return new TaskResponse(
                 task.getId(),
                 task.getProjectId(),
@@ -47,7 +48,7 @@ public record TaskResponse(
                 task.getDescription(),
                 task.getStatus(),
                 task.getPriority(),
-                task.getUserId(),
+                TaskAssigneeResponse.from(assignee),
                 task.getDueDate(),
                 task.getCreatedAt(),
                 task.getUpdatedAt()
