@@ -5,6 +5,7 @@ import com.elotech.taskmanager.domain.error.ErrorMessages;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
+import java.util.Map;
 import java.util.Set;
 
 public final class PageRequests {
@@ -22,6 +23,36 @@ public final class PageRequests {
 
     public static PageRequest of(Integer page, Integer size, Sort sort) {
         return PageRequest.of(pageValue(page), sizeValue(size), sort);
+    }
+
+    public static PageRequest of(
+            Integer page,
+            Integer size,
+            String rawSort,
+            Map<String, String> allowedFields,
+            Sort defaultSort
+    ) {
+        if (rawSort == null || rawSort.isBlank()) {
+            return of(page, size, defaultSort);
+        }
+
+        String[] parts = rawSort.split(",");
+        if (parts.length != 2) {
+            throw new BadRequestException(
+                    ErrorMessages.REQUEST_PARAMETER_INVALID_CODE,
+                    "Sort must use field,direction format"
+            );
+        }
+
+        String property = allowedFields == null ? null : allowedFields.get(parts[0].trim());
+        if (property == null) {
+            throw new BadRequestException(
+                    ErrorMessages.REQUEST_PARAMETER_INVALID_CODE,
+                    "Sort field is not allowed"
+            );
+        }
+
+        return of(page, size, Sort.by(directionValue(parts[1], defaultSort), property));
     }
 
     public static PageRequest of(

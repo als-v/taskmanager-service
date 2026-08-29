@@ -15,6 +15,7 @@ import org.springframework.data.domain.PageRequest;
 import com.elotech.taskmanager.policy.ProjectAccessPolicy;
 import com.elotech.taskmanager.repository.projectmember.ProjectMemberRepository;
 import com.elotech.taskmanager.repository.project.ProjectRepository;
+import com.elotech.taskmanager.repository.project.ProjectSpecifications;
 import com.elotech.taskmanager.repository.task.TaskRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,12 +24,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
 public class ProjectService {
 
     private static final Logger log = LoggerFactory.getLogger(ProjectService.class);
+    private static final Sort DEFAULT_LIST_SORT = Sort.by(Sort.Direction.DESC, "updatedAt");
+    private static final Map<String, String> LIST_SORT_FIELDS = Map.of(
+            "name", "name",
+            "created_at", "createdAt",
+            "updated_at", "updatedAt"
+    );
 
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
@@ -45,16 +53,30 @@ public class ProjectService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<ProjectResponse> list(Integer page, Integer size) {
+    public PageResponse<ProjectResponse> list(String name, String description, String sort, Integer page, Integer size) {
         User currentUser = currentUserService.getCurrentUser();
-        PageRequest pageRequest = PageRequests.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        PageRequest pageRequest = PageRequests.of(page, size, sort, LIST_SORT_FIELDS, DEFAULT_LIST_SORT);
 
         return PageResponse
                 .from(
                         projectRepository
-                                .findAllByMemberUserId(currentUser.getId(), pageRequest)
+                                .findAll(
+                                        ProjectSpecifications.byMemberAndFilters(
+                                                currentUser.getId(),
+                                                blankToNull(name),
+                                                blankToNull(description)
+                                        ),
+                                        pageRequest
+                                )
                                 .map(project -> ProjectResponse.from(project, projectAccessPolicy.requireRole(project.getId(), currentUser.getId())))
                 );
+    }
+
+    private String blankToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 
     @Transactional(readOnly = true)

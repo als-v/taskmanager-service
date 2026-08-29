@@ -67,10 +67,10 @@ class UserNotificationRepositoryTest {
 
     private Notification notification(UUID createdBy, String message) {
         return Notification.builder()
-                .type(NotificationType.TASK_ASSIGNED)
+                .type(NotificationType.PROJECT_ADDED)
                 .message(message)
                 .createdBy(createdBy)
-                .taskId(UUID.randomUUID())
+                .taskId(null)
                 .build();
     }
 

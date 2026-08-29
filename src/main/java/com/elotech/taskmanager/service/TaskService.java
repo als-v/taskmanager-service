@@ -4,6 +4,7 @@ import com.elotech.taskmanager.domain.criteria.TaskListCriteria;
 
 import com.elotech.taskmanager.domain.dto.request.task.CreateTaskRequest;
 import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskAssigneeRequest;
+import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskDueDateRequest;
 import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskRequest;
 import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskStatusRequest;
 import com.elotech.taskmanager.domain.dto.response.common.PageResponse;
@@ -95,7 +96,7 @@ public class TaskService {
 
         Page<Task> page = taskRepository.findAll(
                 TaskSpecifications.byCriteria(projectId, normalized),
-                PageRequests.of(normalized.page(), normalized.size(), sort(normalized.sort()))
+                PageRequests.of(normalized.page(), normalized.size(), normalized.sort(), LIST_SORT_FIELDS, DEFAULT_LIST_SORT)
         );
 
         Map<UUID, User> assigneesById = findAssigneesByTasks(page.getContent());
@@ -197,6 +198,22 @@ public class TaskService {
         return TaskResponse.from(task, resolveAssignee(task.getUserId()));
     }
 
+
+    @Transactional
+    public TaskResponse patchDueDate(UUID projectId, UUID taskId, UpdateTaskDueDateRequest request) {
+        User currentUser = currentUserService.getCurrentUser();
+        projectAccessPolicy.requireRole(projectId, currentUser.getId());
+        Task task = requireTaskInProject(projectId, taskId);
+        LocalDateTime nextDueDate = request.dueDate();
+
+        if (!Objects.equals(task.getDueDate(), nextDueDate)) {
+            task.setDueDate(nextDueDate);
+            saveAudit(task, currentUser.getId(), AuditAction.DUE_DATE_CHANGED, null, null);
+        }
+
+        return TaskResponse.from(task, resolveAssignee(task.getUserId()));
+    }
+
     @Transactional
     public void delete(UUID projectId, UUID taskId) {
         User currentUser = currentUserService.getCurrentUser();
@@ -253,35 +270,6 @@ public class TaskService {
                     "due_date_from must be before or equal to due_date_to"
             );
         }
-    }
-
-    private Sort sort(String rawSort) {
-        if (rawSort == null) return DEFAULT_LIST_SORT;
-        String[] parts = rawSort.split(",");
-
-        if (parts.length != 2) {
-            throw new BadRequestException(
-                    ErrorMessages.REQUEST_PARAMETER_INVALID_CODE,
-                    "Sort must use field,direction format"
-            );
-        }
-
-        String property = LIST_SORT_FIELDS.get(parts[0].trim());
-
-        if (property == null) {
-            throw new BadRequestException(
-                    ErrorMessages.REQUEST_PARAMETER_INVALID_CODE,
-                    "Sort field is not allowed"
-            );
-        }
-
-        Sort.Direction direction = Sort.Direction.fromOptionalString(parts[1].trim())
-                .orElseThrow(() -> new BadRequestException(
-                        ErrorMessages.REQUEST_PARAMETER_INVALID_CODE,
-                        "Sort direction must be ASC or DESC"
-                ));
-
-        return Sort.by(direction, property);
     }
 
     private void validatePatch(UUID projectId, UpdateTaskRequest request, MemberRole actorRole, Task task) {

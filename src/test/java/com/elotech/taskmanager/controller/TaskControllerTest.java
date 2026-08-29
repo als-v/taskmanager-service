@@ -2,6 +2,7 @@ package com.elotech.taskmanager.controller;
 
 import com.elotech.taskmanager.domain.dto.request.task.CreateTaskRequest;
 import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskAssigneeRequest;
+import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskDueDateRequest;
 import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskRequest;
 import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskStatusRequest;
 import com.elotech.taskmanager.domain.dto.response.common.PageResponse;
@@ -252,6 +253,47 @@ class TaskControllerTest {
                         .content("{\"assignee_id\": null}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.assignee").value(org.hamcrest.Matchers.nullValue()));
+    }
+
+    @Test
+    void patchesTaskDueDate() throws Exception {
+        UUID projectId = UUID.randomUUID();
+        UUID taskId = UUID.randomUUID();
+        LocalDateTime dueDate = LocalDateTime.of(2026, 2, 20, 18, 0);
+        UpdateTaskDueDateRequest request = new UpdateTaskDueDateRequest(dueDate);
+        TaskResponse task = taskResponse(projectId, taskId, null);
+        given(taskService.patchDueDate(eq(projectId), eq(taskId), any(UpdateTaskDueDateRequest.class))).willReturn(task);
+
+        mockMvc.perform(patch("/api/projects/{projectId}/tasks/{taskId}/due-date", projectId, taskId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.due_date").value("2026-02-15T18:00:00"));
+    }
+
+    @Test
+    void patchesTaskDueDateToNull() throws Exception {
+        UUID projectId = UUID.randomUUID();
+        UUID taskId = UUID.randomUUID();
+        TaskResponse task = new TaskResponse(
+                taskId,
+                projectId,
+                "Criar login",
+                "JWT",
+                TaskStatus.TODO,
+                Priority.HIGH,
+                null,
+                null,
+                LocalDateTime.of(2026, 1, 10, 9, 0),
+                LocalDateTime.of(2026, 1, 10, 9, 0)
+        );
+        given(taskService.patchDueDate(eq(projectId), eq(taskId), any(UpdateTaskDueDateRequest.class))).willReturn(task);
+
+        mockMvc.perform(patch("/api/projects/{projectId}/tasks/{taskId}/due-date", projectId, taskId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"due_date\": null}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.due_date").value(org.hamcrest.Matchers.nullValue()));
     }
 
     @Test

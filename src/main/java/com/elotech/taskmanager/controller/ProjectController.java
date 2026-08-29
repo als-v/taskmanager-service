@@ -49,7 +49,9 @@ public class ProjectController {
                     - `page` padrão: `0`.
                     - `size` padrão: `20`.
                     - `size` máximo: `100`; valores acima disso são limitados para `100`.
-                    - Ordenação fixa por `created_at DESC`; parâmetro `sort` ainda não é suportado.
+                    - Filtros `name` e `description` são parciais, case-insensitive e combinados com AND.
+                    - `sort` aceita `name`, `created_at` ou `updated_at` no formato `campo,direcao`.
+                    - Ordenação padrão: `updated_at,DESC`.
                     """
     )
             @ApiResponse(responseCode = "200", description = "Página de projetos acessíveis ao usuário autenticado",
@@ -94,9 +96,12 @@ public class ProjectController {
                             )))
             @ApiResponse(responseCode = "401", description = "Access token ausente, expirado ou inválido",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
-    public PageResponse<ProjectResponse> list(@RequestParam(required = false) Integer page,
+    public PageResponse<ProjectResponse> list(@RequestParam(required = false) String name,
+                                              @RequestParam(required = false) String description,
+                                              @RequestParam(required = false) String sort,
+                                              @RequestParam(required = false) Integer page,
                                               @RequestParam(required = false) Integer size) {
-        return projectService.list(page, size);
+        return projectService.list(name, description, sort, page, size);
     }
 
     @GetMapping("/{id}")

@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
+import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -107,4 +108,42 @@ class PageRequestsTest {
         assertThatThrownBy(() -> PageRequests.of(0, 20, "name", "INVALID", allowed, defaultSort))
                 .isInstanceOf(BadRequestException.class);
     }
+    @Test
+    void shouldParseRawSortWithAllowedAliases() {
+        PageRequest pageRequest = PageRequests.of(
+                0,
+                20,
+                "created_at,desc",
+                Map.of("created_at", "createdAt"),
+                Sort.by(Sort.Direction.ASC, "name")
+        );
+
+        assertThat(pageRequest.getSort().getOrderFor("createdAt").isDescending()).isTrue();
+    }
+
+    @Test
+    void shouldUseDefaultSortWhenRawSortIsBlank() {
+        PageRequest pageRequest = PageRequests.of(
+                0,
+                20,
+                " ",
+                Map.of("created_at", "createdAt"),
+                Sort.by(Sort.Direction.ASC, "name")
+        );
+
+        assertThat(pageRequest.getSort().getOrderFor("name").isAscending()).isTrue();
+    }
+
+    @Test
+    void shouldRejectRawSortWithInvalidFormat() {
+        assertThatThrownBy(() -> PageRequests.of(
+                0,
+                20,
+                "created_at",
+                Map.of("created_at", "createdAt"),
+                Sort.by(Sort.Direction.ASC, "name")
+        )).isInstanceOf(BadRequestException.class);
+    }
+
+
 }

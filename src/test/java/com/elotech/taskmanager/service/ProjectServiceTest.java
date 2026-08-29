@@ -21,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,7 +30,6 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -93,20 +93,20 @@ class ProjectServiceTest {
     void list_shouldReturnProjectsForCurrentUserWithFixedPagination() {
         Project project = project(UUID.randomUUID(), currentUser.getId());
         given(currentUserService.getCurrentUser()).willReturn(currentUser);
-        given(projectRepository.findAllByMemberUserId(eq(currentUser.getId()), any(Pageable.class)))
+        given(projectRepository.findAll(any(Specification.class), any(Pageable.class)))
                 .willReturn(new PageImpl<>(List.of(project)));
         given(projectAccessPolicy.requireRole(project.getId(), currentUser.getId())).willReturn(MemberRole.MEMBER);
 
-        PageResponse<ProjectResponse> response = projectService.list(0, 200);
+        PageResponse<ProjectResponse> response = projectService.list(" Plataforma ", " Backlog ", "name,asc", 0, 200);
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(projectRepository).findAllByMemberUserId(eq(currentUser.getId()), pageableCaptor.capture());
+        verify(projectRepository).findAll(any(Specification.class), pageableCaptor.capture());
 
         assertThat(response.content()).hasSize(1);
         assertThat(response.content().get(0).currentUserRole()).isEqualTo(MemberRole.MEMBER);
         assertThat(pageableCaptor.getValue().getPageNumber()).isZero();
         assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(100);
-        assertThat(pageableCaptor.getValue().getSort().getOrderFor("createdAt").isDescending()).isTrue();
+        assertThat(pageableCaptor.getValue().getSort().getOrderFor("name").isAscending()).isTrue();
     }
 
     @Test
@@ -147,10 +147,19 @@ class ProjectServiceTest {
     }
 
     @Test
+    void list_shouldRejectInvalidSortField() {
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+
+        assertThatThrownBy(() -> projectService.list(null, null, "description,asc", 0, 20))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("Sort field is not allowed");
+    }
+
+    @Test
     void list_shouldRejectNegativePage() {
         given(currentUserService.getCurrentUser()).willReturn(currentUser);
 
-        assertThatThrownBy(() -> projectService.list(-1, 20))
+        assertThatThrownBy(() -> projectService.list(null, null, null, -1, 20))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("Page must be greater than or equal to zero");
     }
@@ -159,7 +168,7 @@ class ProjectServiceTest {
     void list_shouldRejectSizeLessThanOne() {
         given(currentUserService.getCurrentUser()).willReturn(currentUser);
 
-        assertThatThrownBy(() -> projectService.list(0, 0))
+        assertThatThrownBy(() -> projectService.list(null, null, null, 0, 0))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("Size must be greater than zero");
     }

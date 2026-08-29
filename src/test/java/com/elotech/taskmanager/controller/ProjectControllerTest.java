@@ -49,10 +49,13 @@ class ProjectControllerTest {
         UUID projectId = UUID.randomUUID();
         UUID ownerId = UUID.randomUUID();
         ProjectResponse project = projectResponse(projectId, ownerId, MemberRole.ADMIN);
-
-        given(projectService.list(0, 20)).willReturn(new PageResponse<>(List.of(project), 0, 20, 1, 1));
+        given(projectService.list("Plataforma", "Backlog", "name,asc", 0, 20))
+                .willReturn(new PageResponse<>(List.of(project), 0, 20, 1, 1));
 
         mockMvc.perform(get("/api/projects")
+                        .param("name", "Plataforma")
+                        .param("description", "Backlog")
+                        .param("sort", "name,asc")
                         .param("page", "0")
                         .param("size", "20"))
                 .andExpect(status().isOk())

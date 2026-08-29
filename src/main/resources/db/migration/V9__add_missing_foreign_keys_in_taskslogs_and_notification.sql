@@ -1,0 +1,2 @@
+ALTER TABLE task_logs ADD CONSTRAINT fk_task_logs_task FOREIGN KEY (task_id) REFERENCES tasks (id);
+ALTER TABLE notifications ADD CONSTRAINT fk_notifications_task FOREIGN KEY (task_id) REFERENCES tasks (id);

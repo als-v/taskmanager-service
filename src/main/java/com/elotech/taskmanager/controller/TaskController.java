@@ -2,6 +2,7 @@ package com.elotech.taskmanager.controller;
 
 import com.elotech.taskmanager.domain.dto.request.task.CreateTaskRequest;
 import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskAssigneeRequest;
+import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskDueDateRequest;
 import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskRequest;
 import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskStatusRequest;
 import com.elotech.taskmanager.domain.dto.response.common.PageResponse;
@@ -220,6 +221,28 @@ public class TaskController {
             @Valid @RequestBody UpdateTaskAssigneeRequest request
     ) {
         return taskService.patchAssignee(projectId, taskId, request);
+    }
+
+
+    @PatchMapping("/{taskId}/due-date")
+    @Operation(
+            summary = "Atualizar prazo da task",
+            description = "Atualiza ou remove somente o prazo da task quando o usuário autenticado é membro do projeto e a task pertence ao projeto informado."
+    )
+    @ApiResponse(responseCode = "200", description = "Prazo atualizado",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = TaskResponse.class)))
+    @ApiResponse(responseCode = "400", description = "Payload inválido",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
+    @ApiResponse(responseCode = "401", description = "Access token ausente, expirado ou inválido",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
+    @ApiResponse(responseCode = "404", description = "Projeto ou task inexistente/inacessível",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
+    public TaskResponse patchDueDate(
+            @PathVariable UUID projectId,
+            @PathVariable UUID taskId,
+            @RequestBody UpdateTaskDueDateRequest request
+    ) {
+        return taskService.patchDueDate(projectId, taskId, request);
     }
 
     @DeleteMapping("/{taskId}")

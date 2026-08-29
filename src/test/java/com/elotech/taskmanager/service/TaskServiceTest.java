@@ -4,6 +4,7 @@ import com.elotech.taskmanager.domain.criteria.TaskListCriteria;
 
 import com.elotech.taskmanager.domain.dto.request.task.CreateTaskRequest;
 import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskAssigneeRequest;
+import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskDueDateRequest;
 import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskRequest;
 import com.elotech.taskmanager.domain.dto.request.task.UpdateTaskStatusRequest;
 import com.elotech.taskmanager.domain.dto.response.common.PageResponse;
@@ -405,6 +406,53 @@ class TaskServiceTest {
         assertThat(response.assignee().id()).isEqualTo(assigneeId);
         verify(taskLogRepository, never()).save(any(TaskLog.class));
         verify(notificationRepository, never()).save(any(Notification.class));
+    }
+
+    @Test
+    void patchDueDateChangesDueDateAndRegistersAudit() {
+        Task task = task(TaskStatus.TODO, Priority.HIGH, null);
+        LocalDateTime newDueDate = LocalDateTime.of(2026, 2, 20, 18, 0);
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireRole(projectId, currentUser.getId())).willReturn(MemberRole.MEMBER);
+        given(taskRepository.findById(task.getId())).willReturn(Optional.of(task));
+
+        TaskResponse response = taskService.patchDueDate(projectId, task.getId(), new UpdateTaskDueDateRequest(newDueDate));
+
+        assertThat(response.dueDate()).isEqualTo(newDueDate);
+        assertThat(task.getDueDate()).isEqualTo(newDueDate);
+        ArgumentCaptor<TaskLog> logCaptor = ArgumentCaptor.forClass(TaskLog.class);
+        verify(taskLogRepository).save(logCaptor.capture());
+        assertThat(logCaptor.getValue().getAction()).isEqualTo(AuditAction.DUE_DATE_CHANGED);
+    }
+
+    @Test
+    void patchDueDateRemovesDueDateAndRegistersAudit() {
+        Task task = task(TaskStatus.TODO, Priority.HIGH, null);
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireRole(projectId, currentUser.getId())).willReturn(MemberRole.MEMBER);
+        given(taskRepository.findById(task.getId())).willReturn(Optional.of(task));
+
+        TaskResponse response = taskService.patchDueDate(projectId, task.getId(), new UpdateTaskDueDateRequest(null));
+
+        assertThat(response.dueDate()).isNull();
+        assertThat(task.getDueDate()).isNull();
+        ArgumentCaptor<TaskLog> logCaptor = ArgumentCaptor.forClass(TaskLog.class);
+        verify(taskLogRepository).save(logCaptor.capture());
+        assertThat(logCaptor.getValue().getAction()).isEqualTo(AuditAction.DUE_DATE_CHANGED);
+    }
+
+    @Test
+    void patchDueDateDoesNotRegisterAuditWhenUnchanged() {
+        Task task = task(TaskStatus.TODO, Priority.HIGH, null);
+        LocalDateTime sameDueDate = task.getDueDate();
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireRole(projectId, currentUser.getId())).willReturn(MemberRole.MEMBER);
+        given(taskRepository.findById(task.getId())).willReturn(Optional.of(task));
+
+        TaskResponse response = taskService.patchDueDate(projectId, task.getId(), new UpdateTaskDueDateRequest(sameDueDate));
+
+        assertThat(response.dueDate()).isEqualTo(sameDueDate);
+        verify(taskLogRepository, never()).save(any(TaskLog.class));
     }
 
     @Test
