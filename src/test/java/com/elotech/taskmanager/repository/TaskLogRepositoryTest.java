@@ -76,6 +76,7 @@ class TaskLogRepositoryTest {
         Task task = taskRepository.save(task(project.getId(), actor.getId(), "Filtrar logs"));
         TaskLog log = taskLogRepository.saveAndFlush(log(project.getId(), task.getId(), actor.getId(), AuditAction.TASK_UPDATED));
         LocalDateTime afterLog = log.getCreatedAt().plusSeconds(1);
+        LocalDateTime max = LocalDateTime.of(9999, 12, 31, 23, 59, 59, 999_999_999);
 
         Page<TaskLogWithReferences> response = taskLogRepository.findByProjectIdWithFilters(
                 project.getId(),
@@ -83,7 +84,7 @@ class TaskLogRepositoryTest {
                 null,
                 null,
                 afterLog,
-                null,
+                max,
                 PageRequest.of(0, 20)
         );
 

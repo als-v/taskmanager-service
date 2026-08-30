@@ -22,8 +22,8 @@ public interface TaskLogRepository extends JpaRepository<TaskLog, UUID> {
               and (:taskId is null or tl.taskId = :taskId)
               and (:actorId is null or tl.actorId = :actorId)
               and (:action is null or tl.action = :action)
-              and (:createdAtFrom is null or tl.createdAt >= :createdAtFrom)
-              and (:createdAtTo is null or tl.createdAt <= :createdAtTo)
+              and tl.createdAt >= :createdAtFrom
+              and tl.createdAt <= :createdAtTo
             """)
     Page<TaskLogWithReferences> findByProjectIdWithFilters(
             @Param("projectId") UUID projectId,

@@ -65,8 +65,15 @@ class AuditLogServiceTest {
         User actor = User.builder().id(actorId).name("Joao Silva").email("joao@example.com").build();
         given(currentUserService.getCurrentUser()).willReturn(currentUser);
         given(projectAccessPolicy.requireMember(projectId, currentUser.getId())).willReturn(Project.builder().id(projectId).build());
-        given(taskLogRepository.findByProjectIdWithFilters(eq(projectId), eq(null), eq(null), eq(null), eq(null), eq(null), any(Pageable.class)))
-                .willReturn(new PageImpl<>(List.of(new TaskLogWithReferences(log, task, actor))));
+        given(taskLogRepository.findByProjectIdWithFilters(
+                eq(projectId),
+                eq(null),
+                eq(null),
+                eq(null),
+                eq(AuditLogService.CREATED_AT_MIN),
+                eq(AuditLogService.CREATED_AT_MAX),
+                any(Pageable.class)
+        )).willReturn(new PageImpl<>(List.of(new TaskLogWithReferences(log, task, actor))));
 
         PageResponse<AuditLogResponse> response = auditLogService.list(projectId, null, null, null, null, null, 0, 20);
 
@@ -78,6 +85,33 @@ class AuditLogServiceTest {
         assertThat(response.content().get(0).actor().id()).isEqualTo(actorId);
         assertThat(response.content().get(0).actor().name()).isEqualTo("Joao Silva");
         verify(projectAccessPolicy).requireMember(projectId, currentUser.getId());
+    }
+
+    @Test
+    void appliesConcreteDateBoundsWhenDateFiltersAreAbsent() {
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectAccessPolicy.requireMember(projectId, currentUser.getId())).willReturn(Project.builder().id(projectId).build());
+        given(taskLogRepository.findByProjectIdWithFilters(
+                eq(projectId),
+                eq(null),
+                eq(null),
+                eq(null),
+                eq(AuditLogService.CREATED_AT_MIN),
+                eq(AuditLogService.CREATED_AT_MAX),
+                any(Pageable.class)
+        )).willReturn(new PageImpl<>(List.of()));
+
+        auditLogService.list(projectId, null, null, null, null, null, 0, 20);
+
+        verify(taskLogRepository).findByProjectIdWithFilters(
+                eq(projectId),
+                eq(null),
+                eq(null),
+                eq(null),
+                eq(AuditLogService.CREATED_AT_MIN),
+                eq(AuditLogService.CREATED_AT_MAX),
+                any(Pageable.class)
+        );
     }
 
     @Test

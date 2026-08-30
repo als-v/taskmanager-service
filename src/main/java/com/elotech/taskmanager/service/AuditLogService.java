@@ -20,6 +20,9 @@ import java.util.UUID;
 @Service
 public class AuditLogService {
 
+    static final LocalDateTime CREATED_AT_MIN = LocalDateTime.of(1, 1, 1, 0, 0);
+    static final LocalDateTime CREATED_AT_MAX = LocalDateTime.of(9999, 12, 31, 23, 59, 59, 999_999_999);
+
     private final TaskLogRepository taskLogRepository;
     private final CurrentUserService currentUserService;
     private final ProjectAccessPolicy projectAccessPolicy;
@@ -50,14 +53,16 @@ public class AuditLogService {
         validateCreatedAtRange(createdAtFrom, createdAtTo);
 
         PageRequest pageRequest = PageRequests.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        LocalDateTime createdAtLowerBound = createdAtFrom == null ? CREATED_AT_MIN : createdAtFrom;
+        LocalDateTime createdAtUpperBound = createdAtTo == null ? CREATED_AT_MAX : createdAtTo;
 
         return PageResponse.from(taskLogRepository.findByProjectIdWithFilters(
                 projectId,
                 taskId,
                 actorId,
                 action,
-                createdAtFrom,
-                createdAtTo,
+                createdAtLowerBound,
+                createdAtUpperBound,
                 pageRequest
         ).map(AuditLogResponse::from));
     }
