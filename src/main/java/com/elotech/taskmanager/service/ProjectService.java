@@ -11,6 +11,7 @@ import com.elotech.taskmanager.domain.enumeration.MemberRole;
 import com.elotech.taskmanager.domain.error.BadRequestException;
 import com.elotech.taskmanager.domain.error.ErrorMessages;
 import com.elotech.taskmanager.pagination.PageRequests;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import com.elotech.taskmanager.policy.ProjectAccessPolicy;
 import com.elotech.taskmanager.repository.projectmember.ProjectMemberRepository;
@@ -43,15 +44,18 @@ public class ProjectService {
     private final CurrentUserService currentUserService;
     private final ProjectAccessPolicy projectAccessPolicy;
     private final TaskRepository taskRepository;
+    private final CacheInvalidationService cacheInvalidationService;
 
-    public ProjectService(ProjectRepository projectRepository, ProjectMemberRepository projectMemberRepository, CurrentUserService currentUserService, ProjectAccessPolicy projectAccessPolicy, TaskRepository taskRepository) {
+    public ProjectService(ProjectRepository projectRepository, ProjectMemberRepository projectMemberRepository, CurrentUserService currentUserService, ProjectAccessPolicy projectAccessPolicy, TaskRepository taskRepository, CacheInvalidationService cacheInvalidationService) {
         this.projectRepository = projectRepository;
         this.projectMemberRepository = projectMemberRepository;
         this.currentUserService = currentUserService;
         this.projectAccessPolicy = projectAccessPolicy;
         this.taskRepository = taskRepository;
+        this.cacheInvalidationService = cacheInvalidationService;
     }
 
+    @Cacheable(value = CacheInvalidationService.USER_PROJECTS_LIST_CACHE, key = "@currentUserService.getCurrentUser().getId().toString() + ':' + T(java.util.Objects).toString(#page) + ':' + T(java.util.Objects).toString(#size) + ':' + T(java.util.Objects).toString(#sort) + ':' + T(java.util.Objects).toString(#name) + ':' + T(java.util.Objects).toString(#description)")
     @Transactional(readOnly = true)
     public PageResponse<ProjectResponse> list(String name, String description, String sort, Integer page, Integer size) {
         User currentUser = currentUserService.getCurrentUser();
@@ -96,6 +100,8 @@ public class ProjectService {
         projectRepository.save(project);
         projectMemberRepository.save(ProjectMember.builder().projectId(project.getId()).userId(currentUser.getId()).role(MemberRole.ADMIN).build());
 
+        cacheInvalidationService.evictProjectMutationCaches();
+
         return ProjectResponse.from(project, MemberRole.ADMIN);
     }
 
@@ -120,6 +126,7 @@ public class ProjectService {
             project.setDescription(request.description());
         }
 
+        cacheInvalidationService.evictProjectMutationCaches();
         return ProjectResponse.from(project, MemberRole.ADMIN);
     }
 
@@ -132,5 +139,6 @@ public class ProjectService {
         project.setDeletedAt(deletedAt);
 
         taskRepository.updateDeletedAtByProjectIdAndDeletedAtIsNull(projectId, deletedAt);
+        cacheInvalidationService.evictProjectMutationCaches();
     }
 }

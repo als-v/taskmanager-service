@@ -61,6 +61,8 @@ class ProjectMemberServiceTest {
 
     @Mock
     private ProjectAccessPolicy projectAccessPolicy;
+    @Mock
+    private CacheInvalidationService cacheInvalidationService;
 
     private ProjectMemberService projectMemberService;
     private User currentUser;
@@ -75,7 +77,8 @@ class ProjectMemberServiceTest {
                 notificationRepository,
                 userNotificationRepository,
                 currentUserService,
-                projectAccessPolicy
+                projectAccessPolicy,
+                cacheInvalidationService
         );
         currentUser = user("Admin", "admin@example.com");
         projectId = UUID.randomUUID();
@@ -130,6 +133,7 @@ class ProjectMemberServiceTest {
             assertThat(notification.getCreatedBy()).isEqualTo(currentUser.getId());
         });
         verify(userNotificationRepository, org.mockito.Mockito.times(2)).save(any(UserNotification.class));
+        verify(cacheInvalidationService).evictMemberMutationCaches();
     }
 
     @Test

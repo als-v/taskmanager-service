@@ -47,6 +47,8 @@ class ProjectServiceTest {
 
     @Mock
     private ProjectAccessPolicy projectAccessPolicy;
+    @Mock
+    private CacheInvalidationService cacheInvalidationService;
 
     @Mock
     private TaskRepository taskRepository;
@@ -57,7 +59,7 @@ class ProjectServiceTest {
 
     @BeforeEach
     void setUp() {
-        projectService = new ProjectService(projectRepository, projectMemberRepository, currentUserService, projectAccessPolicy, taskRepository);
+        projectService = new ProjectService(projectRepository, projectMemberRepository, currentUserService, projectAccessPolicy, taskRepository, cacheInvalidationService);
         currentUser = User.builder()
                 .id(UUID.randomUUID())
                 .name("Maria")
@@ -87,6 +89,7 @@ class ProjectServiceTest {
         assertThat(memberCaptor.getValue().getProjectId()).isEqualTo(response.id());
         assertThat(memberCaptor.getValue().getUserId()).isEqualTo(currentUser.getId());
         assertThat(memberCaptor.getValue().getRole()).isEqualTo(MemberRole.ADMIN);
+        verify(cacheInvalidationService).evictProjectMutationCaches();
     }
 
     @Test

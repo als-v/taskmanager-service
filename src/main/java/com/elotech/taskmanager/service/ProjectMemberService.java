@@ -20,6 +20,7 @@ import com.elotech.taskmanager.repository.notification.NotificationRepository;
 import com.elotech.taskmanager.repository.projectmember.ProjectMemberRepository;
 import com.elotech.taskmanager.repository.usernotification.UserNotificationRepository;
 import com.elotech.taskmanager.repository.user.UserRepository;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +40,7 @@ public class ProjectMemberService {
     private final UserNotificationRepository userNotificationRepository;
     private final CurrentUserService currentUserService;
     private final ProjectAccessPolicy projectAccessPolicy;
+    private final CacheInvalidationService cacheInvalidationService;
 
     public ProjectMemberService(
             ProjectMemberRepository projectMemberRepository,
@@ -46,7 +48,8 @@ public class ProjectMemberService {
             NotificationRepository notificationRepository,
             UserNotificationRepository userNotificationRepository,
             CurrentUserService currentUserService,
-            ProjectAccessPolicy projectAccessPolicy
+            ProjectAccessPolicy projectAccessPolicy,
+            CacheInvalidationService cacheInvalidationService
     ) {
         this.projectMemberRepository = projectMemberRepository;
         this.userRepository = userRepository;
@@ -54,8 +57,10 @@ public class ProjectMemberService {
         this.userNotificationRepository = userNotificationRepository;
         this.currentUserService = currentUserService;
         this.projectAccessPolicy = projectAccessPolicy;
+        this.cacheInvalidationService = cacheInvalidationService;
     }
 
+    @Cacheable(value = CacheInvalidationService.PROJECT_MEMBERS_LIST_CACHE, key = "@currentUserService.getCurrentUser().getId().toString() + ':' + #projectId.toString() + ':' + T(java.util.Objects).toString(#page) + ':' + T(java.util.Objects).toString(#size) + ':' + T(java.util.Objects).toString(#name) + ':' + T(java.util.Objects).toString(#email)")
     @Transactional(readOnly = true)
     public PageResponse<ProjectMemberResponse> list(UUID projectId, Integer page, Integer size, String name, String email) {
         User currentUser = currentUserService.getCurrentUser();
@@ -101,6 +106,7 @@ public class ProjectMemberService {
         List<ProjectMember> savedMembers = projectMemberRepository.saveAll(members);
         savedMembers.forEach(member -> notifyProjectAdded(project, currentUser.getId(), member.getUserId()));
 
+        cacheInvalidationService.evictMemberMutationCaches();
         return savedMembers.stream()
                 .map(member -> {
                     User user = usersById.get(member.getUserId());

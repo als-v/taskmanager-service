@@ -72,6 +72,8 @@ class TaskServiceTest {
     private CurrentUserService currentUserService;
     @Mock
     private ProjectAccessPolicy projectAccessPolicy;
+    @Mock
+    private CacheInvalidationService cacheInvalidationService;
 
     private TaskService taskService;
     private User currentUser;
@@ -89,7 +91,8 @@ class TaskServiceTest {
                 projectMemberRepository,
                 userRepository,
                 currentUserService,
-                projectAccessPolicy
+                projectAccessPolicy,
+                cacheInvalidationService
         );
         currentUser = User.builder().id(UUID.randomUUID()).name("Maria").email("maria@example.com").build();
         projectId = UUID.randomUUID();
@@ -114,6 +117,7 @@ class TaskServiceTest {
         assertThat(response.assignee()).isNull();
         verify(taskLogRepository).save(any(TaskLog.class));
         verify(notificationRepository, never()).save(any(Notification.class));
+        verify(cacheInvalidationService).evictDashboardCaches();
     }
 
     @Test

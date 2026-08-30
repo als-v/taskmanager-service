@@ -13,6 +13,7 @@ import com.elotech.taskmanager.repository.task.TaskPriorityCountProjection;
 import com.elotech.taskmanager.repository.task.TaskRepository;
 import com.elotech.taskmanager.repository.task.TaskStatusCountProjection;
 import com.elotech.taskmanager.repository.task.TaskWipAssigneeProjection;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,6 +46,7 @@ public class DashboardService {
         this.taskRepository = taskRepository;
     }
 
+    @Cacheable(value = CacheInvalidationService.DASHBOARD_SUMMARY_CACHE, key = "@currentUserService.getCurrentUser().getId().toString() + ':' + T(java.util.Objects).toString(#projectId)")
     @Transactional(readOnly = true)
     public DashboardResponse getDashboard(UUID projectId) {
         User currentUser = currentUserService.getCurrentUser();
@@ -79,6 +81,7 @@ public class DashboardService {
         );
     }
 
+    @Cacheable(value = CacheInvalidationService.DASHBOARD_WIP_CACHE, key = "@currentUserService.getCurrentUser().getId().toString() + ':' + T(java.util.Objects).toString(#projectId)")
     @Transactional(readOnly = true)
     public DashboardWipResponse getWip(UUID projectId) {
         User currentUser = currentUserService.getCurrentUser();

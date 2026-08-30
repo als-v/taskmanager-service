@@ -65,6 +65,7 @@ public class TaskService {
     private final UserRepository userRepository;
     private final CurrentUserService currentUserService;
     private final ProjectAccessPolicy projectAccessPolicy;
+    private final CacheInvalidationService cacheInvalidationService;
 
     public TaskService(
             TaskRepository taskRepository,
@@ -74,7 +75,8 @@ public class TaskService {
             ProjectMemberRepository projectMemberRepository,
             UserRepository userRepository,
             CurrentUserService currentUserService,
-            ProjectAccessPolicy projectAccessPolicy
+            ProjectAccessPolicy projectAccessPolicy,
+            CacheInvalidationService cacheInvalidationService
     ) {
         this.taskRepository = taskRepository;
         this.taskLogRepository = taskLogRepository;
@@ -84,6 +86,7 @@ public class TaskService {
         this.userRepository = userRepository;
         this.currentUserService = currentUserService;
         this.projectAccessPolicy = projectAccessPolicy;
+        this.cacheInvalidationService = cacheInvalidationService;
     }
 
     @Transactional(readOnly = true)
@@ -140,6 +143,7 @@ public class TaskService {
             notifyAssignee(saved, currentUser.getId());
         }
 
+        cacheInvalidationService.evictDashboardCaches();
         return TaskResponse.from(saved, resolveAssignee(saved.getUserId()));
     }
 
@@ -154,6 +158,7 @@ public class TaskService {
         validatePatch(projectId, request, actorRole, task);
         applyPatch(task, request, currentUser.getId());
 
+        cacheInvalidationService.evictDashboardCaches();
         return TaskResponse.from(task, resolveAssignee(task.getUserId()));
     }
 
@@ -175,6 +180,7 @@ public class TaskService {
             saveAudit(task, currentUser.getId(), AuditAction.STATUS_CHANGED, previousStatus, nextStatus);
         }
 
+        cacheInvalidationService.evictDashboardCaches();
         return TaskResponse.from(task, resolveAssignee(task.getUserId()));
     }
 
@@ -195,6 +201,7 @@ public class TaskService {
             notifyAssignee(task, currentUser.getId());
         }
 
+        cacheInvalidationService.evictDashboardCaches();
         return TaskResponse.from(task, resolveAssignee(task.getUserId()));
     }
 
@@ -211,6 +218,7 @@ public class TaskService {
             saveAudit(task, currentUser.getId(), AuditAction.DUE_DATE_CHANGED, null, null);
         }
 
+        cacheInvalidationService.evictDashboardCaches();
         return TaskResponse.from(task, resolveAssignee(task.getUserId()));
     }
 
@@ -227,6 +235,7 @@ public class TaskService {
         Task task = requireTaskInProject(projectId, taskId);
         saveAudit(task, currentUser.getId(), AuditAction.TASK_DELETED, null, null);
         task.setDeletedAt(LocalDateTime.now());
+        cacheInvalidationService.evictDashboardCaches();
     }
 
     private void validatePatchPayload(UpdateTaskRequest request) {
