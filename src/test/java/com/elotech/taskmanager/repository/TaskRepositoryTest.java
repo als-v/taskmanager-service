@@ -45,7 +45,7 @@ class TaskRepositoryTest {
         taskRepository.save(expected);
 
         Page<Task> response = taskRepository.findAll(
-                TaskSpecifications.byCriteria(project.getId(), new TaskListCriteria(null, null, null, null, null, null, null, null, null, null, null)),
+                TaskSpecifications.byCriteria(project.getId(), new TaskListCriteria(null, null, null, null, null, null, null, null, null, null)),
                 PageRequest.of(0, 20)
         );
 
@@ -55,7 +55,7 @@ class TaskRepositoryTest {
     }
 
     @Test
-    void findAllByCriteriaFiltersByTitleAndDescriptionIgnoringCase() {
+    void findAllByCriteriaFiltersByQInTitleIgnoringCase() {
         User owner = userRepository.save(user("Owner", "owner-task-filter@example.com"));
         Project project = projectRepository.save(project(owner.getId()));
         Task expected = task(project.getId(), owner.getId(), "Implementar Login", "Criar REFRESH token", TaskStatus.TODO, Priority.HIGH, LocalDateTime.of(2026, 2, 15, 18, 0), null);
@@ -63,13 +63,58 @@ class TaskRepositoryTest {
         taskRepository.save(task(project.getId(), owner.getId(), "Ajustar relatório", "Listar tarefas", TaskStatus.TODO, Priority.HIGH, LocalDateTime.of(2026, 2, 16, 18, 0), null));
 
         Page<Task> response = taskRepository.findAll(
-                TaskSpecifications.byCriteria(project.getId(), new TaskListCriteria(null, null, null, null, null, "login", "refresh", null, null, null, null)),
+                TaskSpecifications.byCriteria(project.getId(), new TaskListCriteria(null, null, null, null, null, "login", null, null, null, null)),
                 PageRequest.of(0, 20)
         );
 
         assertThat(response.getContent())
                 .extracting(Task::getId)
                 .containsExactly(expected.getId());
+    }
+
+    @Test
+    void findAllByCriteriaFiltersByQInDescriptionIgnoringCase() {
+        User owner = userRepository.save(user("Owner", "owner-task-filter-description@example.com"));
+        Project project = projectRepository.save(project(owner.getId()));
+        Task expected = task(project.getId(), owner.getId(), "Implementar auth", "Criar REFRESH token", TaskStatus.TODO, Priority.HIGH, null, null);
+        taskRepository.save(expected);
+        taskRepository.save(task(project.getId(), owner.getId(), "Ajustar relatório", "Listar tarefas", TaskStatus.TODO, Priority.HIGH, null, null));
+
+        Page<Task> response = taskRepository.findAll(
+                TaskSpecifications.byCriteria(project.getId(), new TaskListCriteria(null, null, null, null, null, "refresh", null, null, null, null)),
+                PageRequest.of(0, 20)
+        );
+
+        assertThat(response.getContent())
+                .extracting(Task::getId)
+                .containsExactly(expected.getId());
+    }
+
+    @Test
+    void findAllByCriteriaEscapesQWildcardsAsLiteralText() {
+        User owner = userRepository.save(user("Owner", "owner-task-filter-literal@example.com"));
+        Project project = projectRepository.save(project(owner.getId()));
+        Task percentTask = task(project.getId(), owner.getId(), "Taxa 100% pronta", null, TaskStatus.TODO, Priority.MEDIUM, null, null);
+        Task underscoreTask = task(project.getId(), owner.getId(), "Codigo task", "token_api", TaskStatus.TODO, Priority.MEDIUM, null, null);
+        taskRepository.save(percentTask);
+        taskRepository.save(underscoreTask);
+        taskRepository.save(task(project.getId(), owner.getId(), "Sem marcador", "texto comum", TaskStatus.TODO, Priority.MEDIUM, null, null));
+
+        Page<Task> percentResponse = taskRepository.findAll(
+                TaskSpecifications.byCriteria(project.getId(), new TaskListCriteria(null, null, null, null, null, "%", null, null, null, null)),
+                PageRequest.of(0, 20)
+        );
+        Page<Task> underscoreResponse = taskRepository.findAll(
+                TaskSpecifications.byCriteria(project.getId(), new TaskListCriteria(null, null, null, null, null, "_", null, null, null, null)),
+                PageRequest.of(0, 20)
+        );
+
+        assertThat(percentResponse.getContent())
+                .extracting(Task::getId)
+                .containsExactly(percentTask.getId());
+        assertThat(underscoreResponse.getContent())
+                .extracting(Task::getId)
+                .containsExactly(underscoreTask.getId());
     }
 
     @Test
@@ -86,7 +131,7 @@ class TaskRepositoryTest {
 
         Page<Task> response = taskRepository.findAll(
                 TaskSpecifications.byCriteria(project.getId(), new TaskListCriteria(
-                        TaskStatus.IN_PROGRESS, Priority.CRITICAL, assignee.getId(), from, to, "tasks", "descricao", null, null, null, null
+                        TaskStatus.IN_PROGRESS, Priority.CRITICAL, assignee.getId(), from, to, "tasks", null, null, null, null
                 )),
                 PageRequest.of(0, 20)
         );
@@ -108,7 +153,7 @@ class TaskRepositoryTest {
 
         Page<Task> response = taskRepository.findAll(
                 TaskSpecifications.byCriteria(project.getId(), new TaskListCriteria(
-                        null, null, null, null, null, null, null, null, null, null, true
+                        null, null, null, null, null, null, null, null, null, true
                 )),
                 PageRequest.of(0, 20)
         );
@@ -129,7 +174,7 @@ class TaskRepositoryTest {
 
         Page<Task> response = taskRepository.findAll(
                 TaskSpecifications.byCriteria(project.getId(), new TaskListCriteria(
-                        null, null, null, null, null, null, null, null, null, null, false
+                        null, null, null, null, null, null, null, null, null, false
                 )),
                 PageRequest.of(0, 20)
         );
@@ -149,7 +194,7 @@ class TaskRepositoryTest {
 
         Page<Task> response = taskRepository.findAll(
                 TaskSpecifications.byCriteria(project.getId(), new TaskListCriteria(
-                        null, null, assignee.getId(), null, null, null, null, null, null, null, false
+                        null, null, assignee.getId(), null, null, null, null, null, null, false
                 )),
                 PageRequest.of(0, 20)
         );

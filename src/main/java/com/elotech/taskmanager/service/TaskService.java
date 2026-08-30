@@ -241,7 +241,7 @@ public class TaskService {
 
 
     private TaskListCriteria normalize(TaskListCriteria criteria) {
-        if (criteria == null) return new TaskListCriteria(null, null, null, null, null, null, null, null, null, null, null);
+        if (criteria == null) return new TaskListCriteria(null, null, null, null, null, null, null, null, null, null);
 
         return new TaskListCriteria(
                 criteria.status(),
@@ -249,8 +249,7 @@ public class TaskService {
                 criteria.assigneeId(),
                 criteria.dueDateFrom(),
                 criteria.dueDateTo(),
-                blankToNull(criteria.title()),
-                blankToNull(criteria.description()),
+                blankToNull(criteria.q()),
                 blankToNull(criteria.sort()),
                 criteria.page(),
                 criteria.size(),

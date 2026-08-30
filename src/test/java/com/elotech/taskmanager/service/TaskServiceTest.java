@@ -506,7 +506,7 @@ class TaskServiceTest {
         given(taskRepository.findAll(any(Specification.class), any(Pageable.class)))
                 .willReturn(new PageImpl<>(List.of(task)));
 
-        PageResponse<TaskResponse> response = taskService.list(projectId, new TaskListCriteria(null, null, null, null, null, null, null, null, 0, 200, null));
+        PageResponse<TaskResponse> response = taskService.list(projectId, new TaskListCriteria(null, null, null, null, null, null, null, 0, 200, null));
 
         assertThat(response.content()).hasSize(1);
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
@@ -532,7 +532,6 @@ class TaskServiceTest {
                 dueDateFrom,
                 dueDateTo,
                 " login ",
-                " jwt ",
                 "due_date,asc",
                 1,
                 50,
@@ -554,8 +553,8 @@ class TaskServiceTest {
         given(taskRepository.findAll(any(Specification.class), any(Pageable.class)))
                 .willReturn(new PageImpl<>(List.of(task)));
 
-        taskService.list(projectId, new TaskListCriteria(null, null, null, null, null, null, null, "priority,desc", 0, 20, null));
-        taskService.list(projectId, new TaskListCriteria(null, null, null, null, null, null, null, "status,asc", 0, 20, null));
+        taskService.list(projectId, new TaskListCriteria(null, null, null, null, null, null, "priority,desc", 0, 20, null));
+        taskService.list(projectId, new TaskListCriteria(null, null, null, null, null, null, "status,asc", 0, 20, null));
 
         verify(taskRepository, org.mockito.Mockito.times(2)).findAll(any(Specification.class), any(Pageable.class));
     }
@@ -565,7 +564,7 @@ class TaskServiceTest {
         given(currentUserService.getCurrentUser()).willReturn(currentUser);
         given(projectAccessPolicy.requireMember(projectId, currentUser.getId())).willReturn(project());
 
-        TaskListCriteria criteria = new TaskListCriteria(null, null, null, null, null, null, null, "title,asc", 0, 20, null);
+        TaskListCriteria criteria = new TaskListCriteria(null, null, null, null, null, null, "title,asc", 0, 20, null);
         assertThatThrownBy(() -> taskService.list(projectId, criteria))
                 .isInstanceOf(BadRequestException.class);
     }
@@ -575,7 +574,7 @@ class TaskServiceTest {
         given(currentUserService.getCurrentUser()).willReturn(currentUser);
         given(projectAccessPolicy.requireMember(projectId, currentUser.getId())).willReturn(project());
 
-        TaskListCriteria criteria = new TaskListCriteria(null, null, null, null, null, null, null, "status,up", 0, 20, null);
+        TaskListCriteria criteria = new TaskListCriteria(null, null, null, null, null, null, "status,up", 0, 20, null);
         assertThatThrownBy(() -> taskService.list(projectId, criteria))
                 .isInstanceOf(BadRequestException.class);
     }
@@ -586,7 +585,7 @@ class TaskServiceTest {
         given(projectAccessPolicy.requireMember(projectId, currentUser.getId())).willReturn(project());
 
         TaskListCriteria criteria = new TaskListCriteria(
-                null, null, null, LocalDateTime.of(2026, 3, 1, 0, 0), LocalDateTime.of(2026, 2, 1, 0, 0), null, null, null, 0, 20, null
+                null, null, null, LocalDateTime.of(2026, 3, 1, 0, 0), LocalDateTime.of(2026, 2, 1, 0, 0), null, null, 0, 20, null
         );
         assertThatThrownBy(() -> taskService.list(projectId, criteria))
                 .isInstanceOf(BadRequestException.class);
@@ -646,7 +645,7 @@ class TaskServiceTest {
         given(userRepository.findAllById(any())).willReturn(List.of(assigneeUser, otherAssigneeUser));
 
         PageResponse<TaskResponse> response = taskService.list(projectId,
-                new TaskListCriteria(null, null, null, null, null, null, null, null, 0, 200, null));
+                new TaskListCriteria(null, null, null, null, null, null, null, 0, 200, null));
 
         assertThat(response.content()).extracting(TaskResponse::id, r -> r.assignee() == null ? null : r.assignee().id())
                 .containsExactlyInAnyOrder(
@@ -666,7 +665,7 @@ class TaskServiceTest {
         given(userRepository.findAllById(any())).willReturn(List.of());
 
         PageResponse<TaskResponse> response = taskService.list(projectId,
-                new TaskListCriteria(null, null, null, null, null, null, null, null, 0, 200, null));
+                new TaskListCriteria(null, null, null, null, null, null, null, 0, 200, null));
 
         assertThat(response.content()).hasSize(1);
         assertThat(response.content().get(0).assignee()).isNull();

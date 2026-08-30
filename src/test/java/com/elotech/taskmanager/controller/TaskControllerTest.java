@@ -67,8 +67,7 @@ class TaskControllerTest {
                 .param("assignee_id", task.assignee().id().toString())
                 .param("due_date_from", "2026-02-01T00:00:00")
                 .param("due_date_to", "2026-02-28T23:59:59")
-                .param("title", "login")
-                .param("description", "jwt")
+                .param("q", "login")
                 .param("sort", "due_date,asc")
                 .param("page", "0")
                 .param("size", "20"))
@@ -90,8 +89,7 @@ class TaskControllerTest {
         assertThat(criteria.assigneeId()).isEqualTo(task.assignee().id());
         assertThat(criteria.dueDateFrom()).isEqualTo(LocalDateTime.of(2026, 2, 1, 0, 0));
         assertThat(criteria.dueDateTo()).isEqualTo(LocalDateTime.of(2026, 2, 28, 23, 59, 59));
-        assertThat(criteria.title()).isEqualTo("login");
-        assertThat(criteria.description()).isEqualTo("jwt");
+        assertThat(criteria.q()).isEqualTo("login");
         assertThat(criteria.sort()).isEqualTo("due_date,asc");
         assertThat(criteria.page()).isZero();
         assertThat(criteria.size()).isEqualTo(20);

@@ -49,7 +49,7 @@ public class TaskController {
     @GetMapping
     @Operation(
             summary = "Listar tasks do projeto",
-            description = "Retorna uma página de tasks não deletadas do projeto quando o usuário autenticado é membro `ADMIN` ou `MEMBER`. Permite filtros por `status`, `priority`, `assignee_id`, `due_date_from`, `due_date_to`, buscas parciais por `title` e `description` e `unassigned`. O parâmetro `unassigned` é booleano e tem semântica nas duas direções: `unassigned=true` retorna apenas tasks sem responsável (`assignee_id IS NULL`); `unassigned=false` retorna apenas tasks com responsável (`assignee_id IS NOT NULL`); ausente não filtra por responsável. Quando `assignee_id` também é informado, ele tem precedência sobre `unassigned`. O parâmetro `sort` aceita `created_at`, `due_date`, `priority` ou `status` no formato `campo,direcao`; o padrão é `created_at,desc`."
+            description = "Retorna uma página de tasks não deletadas do projeto quando o usuário autenticado é membro `ADMIN` ou `MEMBER`. Permite filtros por `status`, `priority`, `assignee_id`, `due_date_from`, `due_date_to`, busca textual por `q` em `title` ou `description` e `unassigned`. O parâmetro `unassigned` é booleano e tem semântica nas duas direções: `unassigned=true` retorna apenas tasks sem responsável (`assignee_id IS NULL`); `unassigned=false` retorna apenas tasks com responsável (`assignee_id IS NOT NULL`); ausente não filtra por responsável. Quando `assignee_id` também é informado, ele tem precedência sobre `unassigned`. O parâmetro `sort` aceita `created_at`, `due_date`, `priority` ou `status` no formato `campo,direcao`; o padrão é `created_at,desc`."
     )
     @ApiResponse(responseCode = "200", description = "Página de tasks", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "tasks-page", value = """
                     {
@@ -88,8 +88,7 @@ public class TaskController {
             @RequestParam(required = false) Boolean unassigned,
             @RequestParam(name = "due_date_from", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dueDateFrom,
             @RequestParam(name = "due_date_to", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dueDateTo,
-            @RequestParam(required = false) String title,
-            @RequestParam(required = false) String description,
+            @RequestParam(required = false) String q,
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size
@@ -100,8 +99,7 @@ public class TaskController {
                 assigneeId,
                 dueDateFrom,
                 dueDateTo,
-                title,
-                description,
+                q,
                 sort,
                 page,
                 size,

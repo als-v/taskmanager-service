@@ -62,7 +62,7 @@ class TaskRepositoryPostgresCompatibilityTest {
                 .build());
 
         Page<Task> response = taskRepository.findAll(
-                TaskSpecifications.byCriteria(project.getId(), new TaskListCriteria(null, null, null, null, null, null, null, null, null, null, null)),
+                TaskSpecifications.byCriteria(project.getId(), new TaskListCriteria(null, null, null, null, null, null, null, null, null, null)),
                 PageRequest.of(0, 20)
         );
 
