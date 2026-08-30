@@ -22,6 +22,12 @@ public record DashboardResponse(
         @Schema(description = "Total de tasks por prioridade")
         Map<Priority, Long> byPriority,
 
+        @Schema(description = "Total de tasks atrasadas, excluindo DONE", example = "4")
+        long overdue,
+
+        @Schema(description = "Total de tasks com prazo nos proximos 7 dias, excluindo DONE", example = "7")
+        long dueSoon,
+
         @Schema(description = "Projetos acessiveis ao usuario autenticado")
         List<DashboardProjectResponse> projects,
 

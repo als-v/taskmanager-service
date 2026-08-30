@@ -23,4 +23,10 @@ class DashboardSecurityTest {
         mockMvc.perform(get("/api/dashboard"))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    void dashboardWipWithoutJwtReturns401() throws Exception {
+        mockMvc.perform(get("/api/dashboard/wip"))
+                .andExpect(status().isUnauthorized());
+    }
 }

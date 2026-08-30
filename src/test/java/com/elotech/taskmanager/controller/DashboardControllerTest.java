@@ -2,6 +2,8 @@ package com.elotech.taskmanager.controller;
 
 import com.elotech.taskmanager.domain.dto.response.dashboard.DashboardProjectResponse;
 import com.elotech.taskmanager.domain.dto.response.dashboard.DashboardResponse;
+import com.elotech.taskmanager.domain.dto.response.dashboard.DashboardWipAssigneeResponse;
+import com.elotech.taskmanager.domain.dto.response.dashboard.DashboardWipResponse;
 import com.elotech.taskmanager.domain.enumeration.Priority;
 import com.elotech.taskmanager.domain.enumeration.TaskStatus;
 import com.elotech.taskmanager.domain.error.ErrorMessages;
@@ -20,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -53,6 +54,9 @@ class DashboardControllerTest {
                 .andExpect(jsonPath("$.by_priority.MEDIUM").value(1))
                 .andExpect(jsonPath("$.by_priority.HIGH").value(2))
                 .andExpect(jsonPath("$.by_priority.CRITICAL").value(0))
+                .andExpect(jsonPath("$.overdue").value(4))
+                .andExpect(jsonPath("$.due_soon").value(7))
+                .andExpect(jsonPath("$.wip_by_assignee").doesNotExist())
                 .andExpect(jsonPath("$.projects[0].id").value(projectId.toString()))
                 .andExpect(jsonPath("$.projects[0].name").value("API"))
                 .andExpect(jsonPath("$.selected_project_id").value(org.hamcrest.Matchers.nullValue()))
@@ -68,7 +72,7 @@ class DashboardControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.selected_project_id").value(projectId.toString()));
 
-        verify(dashboardService).getDashboard(eq(projectId));
+        verify(dashboardService).getDashboard(projectId);
     }
 
     @Test
@@ -78,6 +82,48 @@ class DashboardControllerTest {
                 .willThrow(new NotFoundException(ErrorMessages.PROJECT_NOT_FOUND_CODE, ErrorMessages.PROJECT_NOT_FOUND_MESSAGE));
 
         mockMvc.perform(get("/api/dashboard").param("project_id", projectId.toString()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value(ErrorMessages.PROJECT_NOT_FOUND_CODE));
+    }
+
+    @Test
+    void getWipReturnsResponse() throws Exception {
+        UUID assigneeId = UUID.randomUUID();
+        given(dashboardService.getWip(null)).willReturn(new DashboardWipResponse(
+                List.of(new DashboardWipAssigneeResponse(assigneeId, "Maria Silva", "maria@example.com", 3)),
+                null,
+                LocalDateTime.of(2026, 8, 29, 10, 0)
+        ));
+
+        mockMvc.perform(get("/api/dashboard/wip"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].user_id").value(assigneeId.toString()))
+                .andExpect(jsonPath("$.items[0].name").value("Maria Silva"))
+                .andExpect(jsonPath("$.items[0].email").value("maria@example.com"))
+                .andExpect(jsonPath("$.items[0].in_progress").value(3))
+                .andExpect(jsonPath("$.selected_project_id").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.generated_at").value("2026-08-29T10:00:00"));
+    }
+
+    @Test
+    void getWipAcceptsProjectFilter() throws Exception {
+        UUID projectId = UUID.randomUUID();
+        given(dashboardService.getWip(projectId)).willReturn(new DashboardWipResponse(List.of(), projectId, LocalDateTime.now()));
+
+        mockMvc.perform(get("/api/dashboard/wip").param("project_id", projectId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.selected_project_id").value(projectId.toString()));
+
+        verify(dashboardService).getWip(projectId);
+    }
+
+    @Test
+    void getWipMapsInaccessibleProjectTo404() throws Exception {
+        UUID projectId = UUID.randomUUID();
+        given(dashboardService.getWip(projectId))
+                .willThrow(new NotFoundException(ErrorMessages.PROJECT_NOT_FOUND_CODE, ErrorMessages.PROJECT_NOT_FOUND_MESSAGE));
+
+        mockMvc.perform(get("/api/dashboard/wip").param("project_id", projectId.toString()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value(ErrorMessages.PROJECT_NOT_FOUND_CODE));
     }
@@ -99,6 +145,8 @@ class DashboardControllerTest {
                 3,
                 byStatus,
                 byPriority,
+                4,
+                7,
                 List.of(new DashboardProjectResponse(projectId, "API")),
                 selectedProjectId,
                 LocalDateTime.of(2026, 8, 29, 10, 0)

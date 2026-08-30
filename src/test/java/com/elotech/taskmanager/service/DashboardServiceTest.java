@@ -2,6 +2,7 @@ package com.elotech.taskmanager.service;
 
 import com.elotech.taskmanager.domain.dto.response.dashboard.DashboardProjectResponse;
 import com.elotech.taskmanager.domain.dto.response.dashboard.DashboardResponse;
+import com.elotech.taskmanager.domain.dto.response.dashboard.DashboardWipResponse;
 import com.elotech.taskmanager.domain.entity.User;
 import com.elotech.taskmanager.domain.enumeration.Priority;
 import com.elotech.taskmanager.domain.enumeration.TaskStatus;
@@ -12,18 +13,23 @@ import com.elotech.taskmanager.repository.project.ProjectRepository;
 import com.elotech.taskmanager.repository.task.TaskPriorityCountProjection;
 import com.elotech.taskmanager.repository.task.TaskRepository;
 import com.elotech.taskmanager.repository.task.TaskStatusCountProjection;
+import com.elotech.taskmanager.repository.task.TaskWipAssigneeProjection;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,7 +48,6 @@ class DashboardServiceTest {
     private TaskRepository taskRepository;
 
     private DashboardService dashboardService;
-
     private User currentUser;
 
     @BeforeEach
@@ -73,6 +78,10 @@ class DashboardServiceTest {
                 new PriorityCount(Priority.HIGH, 4),
                 new PriorityCount(Priority.CRITICAL, 1)
         ));
+        given(taskRepository.countOverdueForMemberProjects(eq(currentUser.getId()), any(LocalDateTime.class), eq(TaskStatus.DONE)))
+                .willReturn(4L);
+        given(taskRepository.countDueSoonForMemberProjects(eq(currentUser.getId()), any(LocalDateTime.class), any(LocalDateTime.class), eq(TaskStatus.DONE)))
+                .willReturn(7L);
 
         DashboardResponse response = dashboardService.getDashboard(null);
 
@@ -85,13 +94,15 @@ class DashboardServiceTest {
                 .containsEntry(Priority.MEDIUM, 0L)
                 .containsEntry(Priority.HIGH, 4L)
                 .containsEntry(Priority.CRITICAL, 1L);
+        assertThat(response.overdue()).isEqualTo(4);
+        assertThat(response.dueSoon()).isEqualTo(7);
         assertThat(response.projects()).extracting(DashboardProjectResponse::id).containsExactly(projectA, projectB);
         assertThat(response.selectedProjectId()).isNull();
         assertThat(response.generatedAt()).isNotNull();
     }
 
     @Test
-    void getDashboardWithFilterSummarizesOnlySelectedProject() {
+    void getDashboardWithFilterRestrictsTaskMetricsToProject() {
         UUID projectId = UUID.randomUUID();
         given(currentUserService.getCurrentUser()).willReturn(currentUser);
         given(projectRepository.findDashboardProjectsByMemberUserId(currentUser.getId()))
@@ -100,6 +111,10 @@ class DashboardServiceTest {
                 .willReturn(List.of(new StatusCount(TaskStatus.DONE, 7)));
         given(taskRepository.countByPriorityForMemberProject(currentUser.getId(), projectId))
                 .willReturn(List.of(new PriorityCount(Priority.MEDIUM, 7)));
+        given(taskRepository.countOverdueForMemberProject(eq(currentUser.getId()), eq(projectId), any(LocalDateTime.class), eq(TaskStatus.DONE)))
+                .willReturn(1L);
+        given(taskRepository.countDueSoonForMemberProject(eq(currentUser.getId()), eq(projectId), any(LocalDateTime.class), any(LocalDateTime.class), eq(TaskStatus.DONE)))
+                .willReturn(2L);
 
         DashboardResponse response = dashboardService.getDashboard(projectId);
 
@@ -110,21 +125,29 @@ class DashboardServiceTest {
                 .containsEntry(TaskStatus.TODO, 0L);
         assertThat(response.byPriority()).containsEntry(Priority.MEDIUM, 7L)
                 .containsEntry(Priority.CRITICAL, 0L);
+        assertThat(response.overdue()).isEqualTo(1);
+        assertThat(response.dueSoon()).isEqualTo(2);
         assertThat(response.projects()).hasSize(1);
         assertThat(response.selectedProjectId()).isEqualTo(projectId);
     }
 
     @Test
-    void getDashboardWithoutProjectsReturnsZeroedPayload() {
+    void getDashboardWithNoProjectsReturnsEmptyCounts() {
         given(currentUserService.getCurrentUser()).willReturn(currentUser);
         given(projectRepository.findDashboardProjectsByMemberUserId(currentUser.getId())).willReturn(List.of());
         given(taskRepository.countByStatusForMemberProjects(currentUser.getId())).willReturn(List.of());
         given(taskRepository.countByPriorityForMemberProjects(currentUser.getId())).willReturn(List.of());
+        given(taskRepository.countOverdueForMemberProjects(eq(currentUser.getId()), any(LocalDateTime.class), eq(TaskStatus.DONE)))
+                .willReturn(0L);
+        given(taskRepository.countDueSoonForMemberProjects(eq(currentUser.getId()), any(LocalDateTime.class), any(LocalDateTime.class), eq(TaskStatus.DONE)))
+                .willReturn(0L);
 
         DashboardResponse response = dashboardService.getDashboard(null);
 
         assertThat(response.projectsTotal()).isZero();
         assertThat(response.tasksTotal()).isZero();
+        assertThat(response.overdue()).isZero();
+        assertThat(response.dueSoon()).isZero();
         assertThat(response.projects()).isEmpty();
         assertThat(response.byStatus()).containsOnly(
                 org.assertj.core.data.MapEntry.entry(TaskStatus.TODO, 0L),
@@ -137,6 +160,63 @@ class DashboardServiceTest {
                 org.assertj.core.data.MapEntry.entry(Priority.HIGH, 0L),
                 org.assertj.core.data.MapEntry.entry(Priority.CRITICAL, 0L)
         );
+    }
+
+    @Test
+    void getDashboardPropagatesInaccessibleProject() {
+        UUID projectId = UUID.randomUUID();
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(projectRepository.findDashboardProjectsByMemberUserId(currentUser.getId())).willReturn(List.of());
+        willThrow(new NotFoundException(ErrorMessages.PROJECT_NOT_FOUND_CODE, ErrorMessages.PROJECT_NOT_FOUND_MESSAGE))
+                .given(projectAccessPolicy).requireMember(projectId, currentUser.getId());
+
+        assertThatThrownBy(() -> dashboardService.getDashboard(projectId))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void getWipWithoutFilterGroupsInProgressByAssignee() {
+        UUID assigneeId = UUID.randomUUID();
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(taskRepository.countWipByAssigneeForMemberProjects(currentUser.getId(), TaskStatus.IN_PROGRESS))
+                .willReturn(List.of(new WipCount(assigneeId, "Maria Silva", "maria@example.com", 3)));
+
+        DashboardWipResponse response = dashboardService.getWip(null);
+
+        assertThat(response.selectedProjectId()).isNull();
+        assertThat(response.generatedAt()).isNotNull();
+        assertThat(response.items()).hasSize(1);
+        assertThat(response.items().get(0).userId()).isEqualTo(assigneeId);
+        assertThat(response.items().get(0).name()).isEqualTo("Maria Silva");
+        assertThat(response.items().get(0).email()).isEqualTo("maria@example.com");
+        assertThat(response.items().get(0).inProgress()).isEqualTo(3);
+    }
+
+    @Test
+    void getWipWithFilterRestrictsGroupingToProject() {
+        UUID projectId = UUID.randomUUID();
+        UUID assigneeId = UUID.randomUUID();
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        given(taskRepository.countWipByAssigneeForMemberProject(currentUser.getId(), projectId, TaskStatus.IN_PROGRESS))
+                .willReturn(List.of(new WipCount(assigneeId, "Ana", "ana@example.com", 1)));
+
+        DashboardWipResponse response = dashboardService.getWip(projectId);
+
+        verify(projectAccessPolicy).requireMember(projectId, currentUser.getId());
+        assertThat(response.selectedProjectId()).isEqualTo(projectId);
+        assertThat(response.items()).hasSize(1);
+        assertThat(response.items().get(0).inProgress()).isEqualTo(1);
+    }
+
+    @Test
+    void getWipPropagatesInaccessibleProject() {
+        UUID projectId = UUID.randomUUID();
+        given(currentUserService.getCurrentUser()).willReturn(currentUser);
+        willThrow(new NotFoundException(ErrorMessages.PROJECT_NOT_FOUND_CODE, ErrorMessages.PROJECT_NOT_FOUND_MESSAGE))
+                .given(projectAccessPolicy).requireMember(projectId, currentUser.getId());
+
+        assertThatThrownBy(() -> dashboardService.getWip(projectId))
+                .isInstanceOf(NotFoundException.class);
     }
 
     private record StatusCount(TaskStatus status, long total) implements TaskStatusCountProjection {
@@ -162,6 +242,29 @@ class DashboardServiceTest {
         @Override
         public long getTotal() {
             return total;
+        }
+    }
+
+    private record WipCount(UUID userId, String name, String email, long inProgress) implements TaskWipAssigneeProjection {
+
+        @Override
+        public UUID getUserId() {
+            return userId;
+        }
+
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public String getEmail() {
+            return email;
+        }
+
+        @Override
+        public long getInProgress() {
+            return inProgress;
         }
     }
 }

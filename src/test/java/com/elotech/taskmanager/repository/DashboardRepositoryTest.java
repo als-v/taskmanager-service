@@ -19,6 +19,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -53,43 +54,117 @@ class DashboardRepositoryTest {
         projectMemberRepository.save(member(inaccessible, otherUser, MemberRole.ADMIN));
         projectMemberRepository.save(member(deleted, currentUser, MemberRole.ADMIN));
 
-        taskRepository.save(task(api, TaskStatus.TODO, Priority.HIGH, null));
-        taskRepository.save(task(api, TaskStatus.IN_PROGRESS, Priority.CRITICAL, null));
-        taskRepository.save(task(api, TaskStatus.DONE, Priority.MEDIUM, LocalDateTime.now()));
-        taskRepository.save(task(frontend, TaskStatus.TODO, Priority.LOW, null));
-        taskRepository.save(task(inaccessible, TaskStatus.DONE, Priority.HIGH, null));
-        taskRepository.save(task(deleted, TaskStatus.DONE, Priority.HIGH, null));
+        taskRepository.save(task(api, TaskStatus.TODO, Priority.HIGH, currentUser.getId(), LocalDateTime.now().plusDays(1), null));
+        taskRepository.save(task(api, TaskStatus.IN_PROGRESS, Priority.CRITICAL, currentUser.getId(), LocalDateTime.now().plusDays(2), null));
+        taskRepository.save(task(api, TaskStatus.DONE, Priority.MEDIUM, currentUser.getId(), LocalDateTime.now(), null));
+        taskRepository.save(task(frontend, TaskStatus.TODO, Priority.LOW, null, LocalDateTime.now().plusDays(3), null));
+        taskRepository.save(task(inaccessible, TaskStatus.DONE, Priority.HIGH, otherUser.getId(), LocalDateTime.now(), null));
+        taskRepository.save(task(deleted, TaskStatus.DONE, Priority.HIGH, currentUser.getId(), LocalDateTime.now(), null));
 
         assertThat(projectRepository.findDashboardProjectsByMemberUserId(currentUser.getId()))
                 .extracting(DashboardProjectResponse::name)
                 .containsExactly("API", "Frontend");
 
         assertThat(taskRepository.countByStatusForMemberProjects(currentUser.getId()))
-                .extracting(count -> count.getStatus().name() + ":" + count.getTotal())
-                .containsExactlyInAnyOrder("TODO:2", "IN_PROGRESS:1");
+                .map(count -> count.getStatus().name() + ":" + count.getTotal())
+                .containsExactlyInAnyOrder("TODO:2", "IN_PROGRESS:1", "DONE:1");
 
         assertThat(taskRepository.countByPriorityForMemberProjects(currentUser.getId()))
-                .extracting(count -> count.getPriority().name() + ":" + count.getTotal())
-                .containsExactlyInAnyOrder("LOW:1", "HIGH:1", "CRITICAL:1");
+                .map(count -> count.getPriority().name() + ":" + count.getTotal())
+                .containsExactlyInAnyOrder("LOW:1", "MEDIUM:1", "HIGH:1", "CRITICAL:1");
     }
 
     @Test
-    void dashboardQueriesCanAggregateOnlySelectedProject() {
+    void dashboardProjectQueriesRestrictTaskMetricsToSelectedProject() {
         User currentUser = userRepository.save(user("Ana", "ana-dashboard-repository@example.com"));
+
         Project api = projectRepository.save(project("API", currentUser.getId(), null));
         Project frontend = projectRepository.save(project("Frontend", currentUser.getId(), null));
+
         projectMemberRepository.save(member(api, currentUser, MemberRole.ADMIN));
         projectMemberRepository.save(member(frontend, currentUser, MemberRole.MEMBER));
 
-        taskRepository.save(task(api, TaskStatus.TODO, Priority.HIGH, null));
-        taskRepository.save(task(frontend, TaskStatus.DONE, Priority.LOW, null));
+        taskRepository.save(task(api, TaskStatus.TODO, Priority.HIGH, currentUser.getId(), LocalDateTime.now().plusDays(1), null));
+        taskRepository.save(task(frontend, TaskStatus.DONE, Priority.LOW, currentUser.getId(), LocalDateTime.now().plusDays(1), null));
 
         assertThat(taskRepository.countByStatusForMemberProject(currentUser.getId(), api.getId()))
-                .extracting(count -> count.getStatus().name() + ":" + count.getTotal())
+                .map(count -> count.getStatus().name() + ":" + count.getTotal())
                 .containsExactly("TODO:1");
+
         assertThat(taskRepository.countByPriorityForMemberProject(currentUser.getId(), api.getId()))
-                .extracting(count -> count.getPriority().name() + ":" + count.getTotal())
+                .map(count -> count.getPriority().name() + ":" + count.getTotal())
                 .containsExactly("HIGH:1");
+    }
+
+    @Test
+    void dashboardDeadlineQueriesExcludeDoneDeletedInactiveAndInaccessibleTasks() {
+        LocalDateTime now = LocalDateTime.of(2026, 8, 29, 10, 0);
+        User currentUser = userRepository.save(user("Paulo", "paulo-dashboard-repository@example.com"));
+        User otherUser = userRepository.save(user("Luiza", "luiza-dashboard-repository@example.com"));
+
+        Project api = projectRepository.save(project("API", currentUser.getId(), null));
+        Project frontend = projectRepository.save(project("Frontend", currentUser.getId(), null));
+        Project inaccessible = projectRepository.save(project("Inacessivel", otherUser.getId(), null));
+        Project deleted = projectRepository.save(project("Removido", currentUser.getId(), now));
+
+        projectMemberRepository.save(member(api, currentUser, MemberRole.ADMIN));
+        projectMemberRepository.save(member(frontend, currentUser, MemberRole.MEMBER));
+        projectMemberRepository.save(member(inaccessible, otherUser, MemberRole.ADMIN));
+        projectMemberRepository.save(member(deleted, currentUser, MemberRole.ADMIN));
+
+        taskRepository.save(task(api, TaskStatus.TODO, Priority.HIGH, currentUser.getId(), now.minusHours(1), null));
+        taskRepository.save(task(frontend, TaskStatus.IN_PROGRESS, Priority.MEDIUM, currentUser.getId(), now.plusDays(7), null));
+        taskRepository.save(task(api, TaskStatus.DONE, Priority.HIGH, currentUser.getId(), now.minusDays(1), null));
+        taskRepository.save(task(api, TaskStatus.DONE, Priority.HIGH, currentUser.getId(), now.plusDays(1), null));
+        taskRepository.save(task(api, TaskStatus.TODO, Priority.LOW, currentUser.getId(), now.minusDays(1), now));
+        taskRepository.save(task(api, TaskStatus.TODO, Priority.LOW, currentUser.getId(), now.plusDays(1), now));
+        taskRepository.save(task(inaccessible, TaskStatus.TODO, Priority.HIGH, otherUser.getId(), now.minusDays(1), null));
+        taskRepository.save(task(inaccessible, TaskStatus.TODO, Priority.HIGH, otherUser.getId(), now.plusDays(1), null));
+        taskRepository.save(task(deleted, TaskStatus.TODO, Priority.HIGH, currentUser.getId(), now.minusDays(1), null));
+        taskRepository.save(task(deleted, TaskStatus.TODO, Priority.HIGH, currentUser.getId(), now.plusDays(1), null));
+
+        assertThat(taskRepository.countOverdueForMemberProjects(currentUser.getId(), now, TaskStatus.DONE)).isEqualTo(1);
+        assertThat(taskRepository.countDueSoonForMemberProjects(currentUser.getId(), now, now.plusDays(7), TaskStatus.DONE)).isEqualTo(1);
+        assertThat(taskRepository.countOverdueForMemberProject(currentUser.getId(), api.getId(), now, TaskStatus.DONE)).isEqualTo(1);
+        assertThat(taskRepository.countDueSoonForMemberProject(currentUser.getId(), api.getId(), now, now.plusDays(7), TaskStatus.DONE)).isZero();
+    }
+
+    @Test
+    void dashboardWipQueriesGroupOnlyInProgressAssignedTasksFromActiveAccessibleProjects() {
+        User currentUser = userRepository.save(user("Carla", "carla-dashboard-repository@example.com"));
+        User maria = userRepository.save(user("Maria", "maria-wip-dashboard-repository@example.com"));
+        User ana = userRepository.save(user("Ana", "ana-wip-dashboard-repository@example.com"));
+        User otherUser = userRepository.save(user("Bruno", "bruno-wip-dashboard-repository@example.com"));
+
+        Project api = projectRepository.save(project("API", currentUser.getId(), null));
+        Project frontend = projectRepository.save(project("Frontend", currentUser.getId(), null));
+        Project inaccessible = projectRepository.save(project("Inacessivel", otherUser.getId(), null));
+        Project deleted = projectRepository.save(project("Removido", currentUser.getId(), LocalDateTime.now()));
+
+        projectMemberRepository.save(member(api, currentUser, MemberRole.ADMIN));
+        projectMemberRepository.save(member(api, maria, MemberRole.MEMBER));
+        projectMemberRepository.save(member(api, ana, MemberRole.MEMBER));
+        projectMemberRepository.save(member(frontend, currentUser, MemberRole.MEMBER));
+        projectMemberRepository.save(member(frontend, maria, MemberRole.MEMBER));
+        projectMemberRepository.save(member(inaccessible, otherUser, MemberRole.ADMIN));
+        projectMemberRepository.save(member(deleted, currentUser, MemberRole.ADMIN));
+
+        taskRepository.save(task(api, TaskStatus.IN_PROGRESS, Priority.HIGH, maria.getId(), LocalDateTime.now().plusDays(1), null));
+        taskRepository.save(task(api, TaskStatus.IN_PROGRESS, Priority.HIGH, maria.getId(), LocalDateTime.now().plusDays(2), null));
+        taskRepository.save(task(frontend, TaskStatus.IN_PROGRESS, Priority.MEDIUM, ana.getId(), LocalDateTime.now().plusDays(3), null));
+        taskRepository.save(task(api, TaskStatus.TODO, Priority.HIGH, maria.getId(), LocalDateTime.now().plusDays(1), null));
+        taskRepository.save(task(api, TaskStatus.IN_PROGRESS, Priority.HIGH, null, LocalDateTime.now().plusDays(1), null));
+        taskRepository.save(task(api, TaskStatus.IN_PROGRESS, Priority.HIGH, maria.getId(), LocalDateTime.now().plusDays(1), LocalDateTime.now()));
+        taskRepository.save(task(inaccessible, TaskStatus.IN_PROGRESS, Priority.HIGH, otherUser.getId(), LocalDateTime.now().plusDays(1), null));
+        taskRepository.save(task(deleted, TaskStatus.IN_PROGRESS, Priority.HIGH, maria.getId(), LocalDateTime.now().plusDays(1), null));
+
+        assertThat(taskRepository.countWipByAssigneeForMemberProjects(currentUser.getId(), TaskStatus.IN_PROGRESS))
+                .map(count -> count.getName() + ":" + count.getInProgress())
+                .containsExactly("Ana:1", "Maria:2");
+
+        assertThat(taskRepository.countWipByAssigneeForMemberProject(currentUser.getId(), api.getId(), TaskStatus.IN_PROGRESS))
+                .map(count -> count.getName() + ":" + count.getInProgress())
+                .containsExactly("Maria:2");
     }
 
     private User user(String name, String email) {
@@ -100,10 +175,10 @@ class DashboardRepositoryTest {
                 .build();
     }
 
-    private Project project(String name, java.util.UUID ownerId, LocalDateTime deletedAt) {
+    private Project project(String name, UUID ownerId, LocalDateTime deletedAt) {
         return Project.builder()
                 .name(name)
-                .description("Projeto")
+                .description(name + " description")
                 .ownerId(ownerId)
                 .deletedAt(deletedAt)
                 .build();
@@ -117,12 +192,22 @@ class DashboardRepositoryTest {
                 .build();
     }
 
-    private Task task(Project project, TaskStatus status, Priority priority, LocalDateTime deletedAt) {
+    private Task task(
+            Project project,
+            TaskStatus status,
+            Priority priority,
+            UUID assigneeId,
+            LocalDateTime dueDate,
+            LocalDateTime deletedAt
+    ) {
         return Task.builder()
                 .projectId(project.getId())
-                .title("Task")
+                .title("Task " + status.name())
+                .description("Description")
                 .status(status)
                 .priority(priority)
+                .userId(assigneeId)
+                .dueDate(dueDate)
                 .deletedAt(deletedAt)
                 .build();
     }
