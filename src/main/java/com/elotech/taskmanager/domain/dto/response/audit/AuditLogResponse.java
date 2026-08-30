@@ -3,6 +3,7 @@ package com.elotech.taskmanager.domain.dto.response.audit;
 import com.elotech.taskmanager.domain.entity.TaskLog;
 import com.elotech.taskmanager.domain.enumeration.AuditAction;
 import com.elotech.taskmanager.domain.enumeration.TaskStatus;
+import com.elotech.taskmanager.repository.tasklog.TaskLogWithReferences;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDateTime;
@@ -14,9 +15,9 @@ public record AuditLogResponse(
         @Schema(description = "Projeto ao qual o log pertence")
         UUID projectId,
         @Schema(description = "Task afetada pelo evento")
-        UUID taskId,
+        AuditLogReferenceResponse task,
         @Schema(description = "Usuario que executou a acao")
-        UUID actorId,
+        AuditLogReferenceResponse actor,
         @Schema(description = "Acao auditada", example = "STATUS_CHANGED")
         AuditAction action,
         @Schema(description = "Status anterior, preenchido somente para alteracao de status")
@@ -30,8 +31,22 @@ public record AuditLogResponse(
         return new AuditLogResponse(
                 log.getId(),
                 log.getProjectId(),
-                log.getTaskId(),
-                log.getActorId(),
+                new AuditLogReferenceResponse(log.getTaskId(), null),
+                new AuditLogReferenceResponse(log.getActorId(), null),
+                log.getAction(),
+                log.getFromStatus(),
+                log.getToStatus(),
+                log.getCreatedAt()
+        );
+    }
+
+    public static AuditLogResponse from(TaskLogWithReferences projection) {
+        TaskLog log = projection.log();
+        return new AuditLogResponse(
+                log.getId(),
+                log.getProjectId(),
+                new AuditLogReferenceResponse(projection.task().getId(), projection.task().getTitle()),
+                new AuditLogReferenceResponse(projection.actor().getId(), projection.actor().getName()),
                 log.getAction(),
                 log.getFromStatus(),
                 log.getToStatus(),

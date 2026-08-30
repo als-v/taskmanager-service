@@ -22,6 +22,8 @@ import java.util.Map;
 @ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis", matchIfMissing = true)
 public class RedisCacheConfig {
 
+    static final String CACHE_KEY_PREFIX = "tm:v2:";
+
     @Bean
     CacheManager cacheManager(RedisConnectionFactory connectionFactory, ObjectMapper objectMapper) {
         RedisCacheConfiguration defaultConfiguration = cacheConfiguration(objectMapper, Duration.ofMinutes(2));
@@ -41,20 +43,23 @@ public class RedisCacheConfig {
                 .build();
     }
 
-    private RedisCacheConfiguration cacheConfiguration(ObjectMapper objectMapper, Duration ttl) {
+    RedisCacheConfiguration cacheConfiguration(ObjectMapper objectMapper, Duration ttl) {
         ObjectMapper cacheObjectMapper = objectMapper.copy()
-                .registerModule(new JavaTimeModule())
-                .activateDefaultTyping(
-                        LaissezFaireSubTypeValidator.instance,
-                        ObjectMapper.DefaultTyping.NON_FINAL,
-                        JsonTypeInfo.As.PROPERTY
-                );
+                .registerModule(new JavaTimeModule());
 
+        cacheObjectMapper.activateDefaultTyping(
+                LaissezFaireSubTypeValidator.instance,
+                ObjectMapper.DefaultTyping.EVERYTHING,
+                JsonTypeInfo.As.PROPERTY
+        );
+
+        GenericJackson2JsonRedisSerializer.registerNullValueSerializer(cacheObjectMapper, null);
         GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(cacheObjectMapper);
 
         return RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(ttl)
                 .disableCachingNullValues()
+                .computePrefixWith(cacheName -> CACHE_KEY_PREFIX + cacheName + "::")
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer));
     }
 }
