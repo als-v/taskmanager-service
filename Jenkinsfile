@@ -26,7 +26,9 @@ pipeline {
         expression { return params.RUN_DEPLOY }
       }
       steps {
-        sh './mvnw test'
+        dir('/workspace/taskmanager-service') {
+          sh './mvnw test'
+        }
       }
     }
 
@@ -35,7 +37,9 @@ pipeline {
         expression { return params.RUN_DEPLOY }
       }
       steps {
-        sh './scripts/deploy.sh'
+        dir('/workspace/taskmanager-service') {
+          sh './scripts/deploy.sh'
+        }
       }
     }
 
@@ -44,7 +48,9 @@ pipeline {
         expression { return params.RUN_SEED }
       }
       steps {
-        sh './scripts/seed-db.sh'
+        dir('/workspace/taskmanager-service') {
+          sh './scripts/seed-db.sh'
+        }
       }
     }
 
@@ -53,7 +59,9 @@ pipeline {
         expression { return params.RUN_RESET }
       }
       steps {
-        sh 'CONFIRM_RESET=true ./scripts/reset-env.sh'
+        dir('/workspace/taskmanager-service') {
+          sh 'CONFIRM_RESET=true ./scripts/reset-env.sh'
+        }
       }
     }
   }
