@@ -11,6 +11,17 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends docker-ce-cli docker-compose-plugin \
     && git config --system --add safe.directory /workspace/taskmanager-service \
     && git config --system --add safe.directory /workspace/taskmanager-service/.git \
+    && git config --global --add safe.directory /workspace/taskmanager-service \
+    && git config --global --add safe.directory /workspace/taskmanager-service/.git \
     && rm -rf /var/lib/apt/lists/*
 
+COPY init.groovy.d/ /usr/share/jenkins/ref/init.groovy.d/
+
 USER jenkins
+RUN git config --global --add safe.directory /workspace/taskmanager-service \
+    && git config --global --add safe.directory /workspace/taskmanager-service/.git \
+    && jenkins-plugin-cli --plugins \
+      git \
+      workflow-aggregator \
+      pipeline-stage-view \
+      pipeline-graph-view
