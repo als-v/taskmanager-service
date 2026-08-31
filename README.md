@@ -16,3 +16,26 @@ Caches configurados:
 A invalidacao acontece nos inserts: Insert de task limpa dashboard e WIP; Insert de project limpa projetos do usuario e dashboards; Adicao de membros limpa membros do projeto, projetos do usuario e dashboards.
 
 Tasks, Notifications e AuditLogs não serão cacheados por serem dados sensíveis que possuem alteracoes mais frequentes.
+
+
+## Build
+
+Scripts principais:
+
+```bash
+./scripts/deploy.sh
+./scripts/seed-db.sh
+CONFIRM_RESET=true ./scripts/reset-env.sh
+```
+
+`docker-compose.yml` possui o ambiente completo. 
+`docker-compose.build.yml` possui apenas o `build` da API e Jenkins. 
+
+- `deploy.sh` usa os dois arquivos para buildar as imagens locais e subir as dependencias: `postgres`, `redis`, `pgadmin`, `sonarqube`, inclusindo `api` e `jenkins`. 
+- `seed-db.sh` aplica seed.
+- `reset-env.sh` reseta o ambiente.
+
+Portas padrao: API `8080`, pgAdmin `5050`, SonarQube `9000`, Jenkins `8081`.
+
+Usuarios seed seguem o padrao: `usuario1@usuario1.com` ate `usuario10@usuario10.com`, todos com senha `123mudarA@`. 
+O seed cria 20 projetos, 1000 tasks e dados de audit log/notificacoes, respeitando WIP maximo de 5 `IN_PROGRESS` por responsavel dentro do projeto.

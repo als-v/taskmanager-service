@@ -1,0 +1,15 @@
+target
+.git
+.idea
+.vscode
+.env
+*.log
+logs
+Dockerfile
+Jenkinsfile
+docker/postgres-data
+docker/pgadmin-data
+docker/redis-data
+docker/sonarqube-data
+docker/sonarqube-extensions
+docker/sonarqube-logs
