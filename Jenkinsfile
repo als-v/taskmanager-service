@@ -2,7 +2,7 @@ pipeline {
   agent any
 
   parameters {
-    booleanParam(name: 'RUN_DEPLOY', defaultValue: true, description: 'Build API image and start local Docker Compose services.')
+    booleanParam(name: 'RUN_DEPLOY', defaultValue: true, description: 'Build and recreate only the API service.')
     booleanParam(name: 'RUN_SEED', defaultValue: false, description: 'Apply demo seed to the already migrated database.')
     booleanParam(name: 'RUN_RESET', defaultValue: false, description: 'Reset Docker Compose containers and named volumes. Must run isolated.')
   }

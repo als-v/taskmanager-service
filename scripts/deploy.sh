@@ -16,11 +16,8 @@ set -a
 source "$ENV_FILE"
 set +a
 
-docker compose --env-file "$ENV_FILE" -f docker-compose.yml -f docker-compose.build.yml build api jenkins
-docker compose --env-file "$ENV_FILE" -f docker-compose.yml -f docker-compose.build.yml up -d postgres redis api pgadmin sonarqube jenkins
+docker compose --env-file "$ENV_FILE" -f docker-compose.app.yml -f docker-compose.build.yml build api
+docker compose --env-file "$ENV_FILE" -f docker-compose.app.yml -f docker-compose.build.yml up -d --no-deps --force-recreate api
 
-echo "=== Servicos === "
+echo "=== App ==="
 echo "Task Manager API: http://localhost:${API_PORT:-8080}"
-echo "pgAdmin: http://localhost:${PGADMIN_PORT:-5050}"
-echo "SonarQube: http://localhost:${SONAR_PORT:-9000}"
-echo "Jenkins: http://localhost:${JENKINS_PORT:-8081}"

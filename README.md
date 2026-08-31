@@ -22,20 +22,23 @@ Tasks, Notifications e AuditLogs não serão cacheados por serem dados sensívei
 
 Scripts principais:
 
+Arquivos Compose:
+
+- `docker-compose.yml`: ferramentas `postgres`, `redis`, `pgadmin`, `sonarqube`, `jenkins`.
+- `docker-compose.app.yml`: aplicacao usando a imagem `taskmanager-api:local`.
+- `docker-compose.build.yml`: instrucoes de build das imagens locais (`api` e `jenkins`).
+
+Bootstrap de infraestrutura local:
+
 ```bash
-./scripts/deploy.sh
-./scripts/seed-db.sh
-CONFIRM_RESET=true ./scripts/reset-env.sh
+docker compose -f docker-compose.yml -f docker-compose.build.yml build jenkins
+docker compose up -d postgres redis pgadmin sonarqube jenkins
 ```
 
-`docker-compose.yml` possui o ambiente completo. 
-`docker-compose.build.yml` possui apenas o `build` da API e Jenkins. 
-
-- `deploy.sh` usa os dois arquivos para buildar as imagens locais e subir as dependencias: `postgres`, `redis`, `pgadmin`, `sonarqube`, inclusindo `api` e `jenkins`. 
+- `deploy.sh` usa os dois arquivos para buildar as imagens locais e subir as dependencias: `postgres`, `redis`, `pgadmin`, `sonarqube`, inclusindo `api` e `jenkins`.
 - `seed-db.sh` aplica seed.
 - `reset-env.sh` reseta o ambiente.
 
 Portas padrao: API `8080`, pgAdmin `5050`, SonarQube `9000`, Jenkins `8081`.
 
-Usuarios seed seguem o padrao: `usuario1@usuario1.com` ate `usuario10@usuario10.com`, todos com senha `123mudarA@`. 
-O seed cria 20 projetos, 1000 tasks e dados de audit log/notificacoes, respeitando WIP maximo de 5 `IN_PROGRESS` por responsavel dentro do projeto.
+Usuarios seed: `usuario1@usuario1.com` ate `usuario10@usuario10.com`, todos com senha `123mudarA@`. O seed cria 20 projetos, 1000 tasks e dados de audit log/notificacoes, respeitando WIP maximo de 5 `IN_PROGRESS` por responsavel dentro do projeto.
