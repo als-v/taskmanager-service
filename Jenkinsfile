@@ -7,10 +7,6 @@ pipeline {
     booleanParam(name: 'RUN_RESET', defaultValue: false, description: 'Reset Docker Compose containers and named volumes. Must run isolated.')
   }
 
-  options {
-    timestamps()
-  }
-
   stages {
     stage('Validate Parameters') {
       steps {
