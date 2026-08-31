@@ -51,3 +51,9 @@ docker/*
 !docker/seed/**
 !docker/jenkins/
 !docker/jenkins/**
+!docker/loki/
+!docker/loki/**
+!docker/promtail/
+!docker/promtail/**
+!docker/grafana/
+!docker/grafana/**

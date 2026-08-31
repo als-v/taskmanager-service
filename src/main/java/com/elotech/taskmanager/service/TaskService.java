@@ -25,6 +25,7 @@ import com.elotech.taskmanager.domain.error.ErrorMessages;
 import com.elotech.taskmanager.pagination.PageRequests;
 import com.elotech.taskmanager.domain.error.ForbiddenException;
 import com.elotech.taskmanager.domain.error.NotFoundException;
+import com.elotech.taskmanager.logging.ApplicationEventLogger;
 import com.elotech.taskmanager.policy.ProjectAccessPolicy;
 import com.elotech.taskmanager.repository.notification.NotificationRepository;
 import com.elotech.taskmanager.repository.projectmember.ProjectMemberRepository;
@@ -66,6 +67,7 @@ public class TaskService {
     private final CurrentUserService currentUserService;
     private final ProjectAccessPolicy projectAccessPolicy;
     private final CacheInvalidationService cacheInvalidationService;
+    private final ApplicationEventLogger eventLogger;
 
     public TaskService(
             TaskRepository taskRepository,
@@ -76,7 +78,8 @@ public class TaskService {
             UserRepository userRepository,
             CurrentUserService currentUserService,
             ProjectAccessPolicy projectAccessPolicy,
-            CacheInvalidationService cacheInvalidationService
+            CacheInvalidationService cacheInvalidationService,
+            ApplicationEventLogger eventLogger
     ) {
         this.taskRepository = taskRepository;
         this.taskLogRepository = taskLogRepository;
@@ -87,6 +90,7 @@ public class TaskService {
         this.currentUserService = currentUserService;
         this.projectAccessPolicy = projectAccessPolicy;
         this.cacheInvalidationService = cacheInvalidationService;
+        this.eventLogger = eventLogger;
     }
 
     @Transactional(readOnly = true)
@@ -416,6 +420,7 @@ public class TaskService {
                 .fromStatus(fromStatus)
                 .toStatus(toStatus)
                 .build());
+        eventLogger.audit(action, task.getProjectId(), task.getId(), actorId, fromStatus, toStatus);
     }
 
     private void notifyAssignee(Task task, UUID actorId) {

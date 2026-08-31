@@ -24,6 +24,7 @@ import com.elotech.taskmanager.domain.error.BadRequestException;
 import com.elotech.taskmanager.domain.error.BusinessException;
 import com.elotech.taskmanager.domain.error.ForbiddenException;
 import com.elotech.taskmanager.domain.error.NotFoundException;
+import com.elotech.taskmanager.logging.ApplicationEventLogger;
 import com.elotech.taskmanager.policy.ProjectAccessPolicy;
 import com.elotech.taskmanager.repository.notification.NotificationRepository;
 import com.elotech.taskmanager.repository.projectmember.ProjectMemberRepository;
@@ -74,6 +75,8 @@ class TaskServiceTest {
     private ProjectAccessPolicy projectAccessPolicy;
     @Mock
     private CacheInvalidationService cacheInvalidationService;
+    @Mock
+    private ApplicationEventLogger eventLogger;
 
     private TaskService taskService;
     private User currentUser;
@@ -92,7 +95,8 @@ class TaskServiceTest {
                 userRepository,
                 currentUserService,
                 projectAccessPolicy,
-                cacheInvalidationService
+                cacheInvalidationService,
+                eventLogger
         );
         currentUser = User.builder().id(UUID.randomUUID()).name("Maria").email("maria@example.com").build();
         projectId = UUID.randomUUID();

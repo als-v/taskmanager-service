@@ -1,0 +1,177 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {"type": "loki", "uid": "Loki"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
+      "id": 1,
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+      "targets": [{"datasource": {"type": "loki", "uid": "Loki"}, "expr": "sum(count_over_time({event_type=\"auth\", event_name=\"LOGIN_SUCCESS\"}[$__range]))", "refId": "A"}],
+      "title": "Logins com sucesso",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "Loki"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}, "overrides": []},
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
+      "id": 2,
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+      "targets": [{"datasource": {"type": "loki", "uid": "Loki"}, "expr": "sum(count_over_time({event_type=\"auth\", event_name=\"LOGIN_FAILURE\"}[$__range]))", "refId": "A"}],
+      "title": "Falhas de login",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "Loki"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
+      "id": 3,
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+      "targets": [{"datasource": {"type": "loki", "uid": "Loki"}, "expr": "sum(count_over_time({event_type=\"auth\", event_name=\"USER_SIGNUP_SUCCESS\"}[$__range]))", "refId": "A"}],
+      "title": "Novos cadastros",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "Loki"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]}}, "overrides": []},
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 0},
+      "id": 4,
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+      "targets": [{"datasource": {"type": "loki", "uid": "Loki"}, "expr": "sum(count_over_time({event_type=\"audit\"}[$__range]))", "refId": "A"}],
+      "title": "Eventos de audit",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "Loki"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}, "overrides": []},
+      "gridPos": {"h": 4, "w": 4, "x": 16, "y": 0},
+      "id": 5,
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+      "targets": [{"datasource": {"type": "loki", "uid": "Loki"}, "expr": "sum(count_over_time({container=~\".*taskmanager.*\"} |= \"ERROR\" [$__range]))", "refId": "A"}],
+      "title": "Erros da API",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "Loki"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "id": 6,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single", "sort": "none"}},
+      "targets": [{"datasource": {"type": "loki", "uid": "Loki"}, "expr": "sum by (event_name) (count_over_time({event_type=\"auth\", event_name=~\"$event_name\", result=~\"$result\"} |~ \"$search\" [$__interval]))", "refId": "A"}],
+      "title": "Auth events por tempo",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "Loki"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "id": 7,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single", "sort": "none"}},
+      "targets": [{"datasource": {"type": "loki", "uid": "Loki"}, "expr": "sum(count_over_time({event_type=\"auth\", event_name=\"LOGIN_FAILURE\"} |~ \"$search\" [$__interval]))", "refId": "A"}],
+      "title": "Falhas de login por tempo",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "Loki"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 12},
+      "id": 8,
+      "options": {"legend": {"displayMode": "list", "placement": "right"}, "pieType": "pie", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+      "targets": [{"datasource": {"type": "loki", "uid": "Loki"}, "expr": "sum by (action) (count_over_time({event_type=\"audit\", action=~\"$action\"} |~ \"$search\" [$__range]))", "refId": "A"}],
+      "title": "Audit events por ação",
+      "type": "piechart"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "Loki"},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 12},
+      "id": 9,
+      "options": {"legend": {"displayMode": "list", "placement": "right"}, "pieType": "pie", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+      "targets": [{"datasource": {"type": "loki", "uid": "Loki"}, "expr": "sum by (device_type) (count_over_time({event_type=\"auth\", device_type=~\".+\"} |~ \"$search\" [$__range]))", "refId": "A"}],
+      "title": "Eventos por dispositivo",
+      "type": "piechart"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "Loki"},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 12},
+      "id": 10,
+      "options": {"legend": {"displayMode": "list", "placement": "right"}, "pieType": "pie", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+      "targets": [{"datasource": {"type": "loki", "uid": "Loki"}, "expr": "sum by (browser, os) (count_over_time({event_type=\"auth\", browser=~\".+\", os=~\".+\"} |~ \"$search\" [$__range]))", "refId": "A"}],
+      "title": "Eventos por browser/OS",
+      "type": "piechart"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "Loki"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
+      "id": 11,
+      "options": {"dedupStrategy": "none", "enableLogDetails": true, "prettifyLogMessage": true, "showCommonLabels": false, "showLabels": true, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": false},
+      "targets": [{"datasource": {"type": "loki", "uid": "Loki"}, "expr": "{event_type=\"auth\", event_name=\"LOGIN_SUCCESS\"} |~ \"$search\"", "refId": "A"}],
+      "title": "Últimos logins",
+      "type": "logs"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "Loki"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+      "id": 12,
+      "options": {"dedupStrategy": "none", "enableLogDetails": true, "prettifyLogMessage": true, "showCommonLabels": false, "showLabels": true, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": false},
+      "targets": [{"datasource": {"type": "loki", "uid": "Loki"}, "expr": "{event_type=\"auth\", event_name=\"LOGIN_FAILURE\"} |~ \"$search\"", "refId": "A"}],
+      "title": "Últimas falhas de login",
+      "type": "logs"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "Loki"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 28},
+      "id": 13,
+      "options": {"dedupStrategy": "none", "enableLogDetails": true, "prettifyLogMessage": true, "showCommonLabels": false, "showLabels": true, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": false},
+      "targets": [{"datasource": {"type": "loki", "uid": "Loki"}, "expr": "{event_type=\"audit\", action=~\"$action\"} |~ \"$search\"", "refId": "A"}],
+      "title": "Últimos audit logs",
+      "type": "logs"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "Loki"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 28},
+      "id": 14,
+      "options": {"dedupStrategy": "none", "enableLogDetails": true, "prettifyLogMessage": true, "showCommonLabels": false, "showLabels": true, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": false},
+      "targets": [{"datasource": {"type": "loki", "uid": "Loki"}, "expr": "{container=~\".*taskmanager.*\"} |= \"ERROR\" |~ \"$search\"", "refId": "A"}],
+      "title": "Últimos erros da API",
+      "type": "logs"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["taskmanager", "loki", "logs"],
+  "templating": {
+    "list": [
+      {"current": {"selected": true, "text": ".*", "value": ".*"}, "hide": 0, "label": "event_type", "name": "event_type", "options": [{"selected": true, "text": ".*", "value": ".*"}], "query": ".*", "type": "textbox"},
+      {"current": {"selected": true, "text": ".*", "value": ".*"}, "hide": 0, "label": "event_name", "name": "event_name", "options": [{"selected": true, "text": ".*", "value": ".*"}], "query": ".*", "type": "textbox"},
+      {"current": {"selected": true, "text": ".*", "value": ".*"}, "hide": 0, "label": "result", "name": "result", "options": [{"selected": true, "text": ".*", "value": ".*"}], "query": ".*", "type": "textbox"},
+      {"current": {"selected": true, "text": ".*", "value": ".*"}, "hide": 0, "label": "action", "name": "action", "options": [{"selected": true, "text": ".*", "value": ".*"}], "query": ".*", "type": "textbox"},
+      {"current": {"selected": false, "text": "", "value": ""}, "hide": 0, "label": "busca livre", "name": "search", "options": [], "query": "", "type": "textbox"}
+    ]
+  },
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "TaskManager Logs",
+  "uid": "taskmanager-logs",
+  "version": 1,
+  "weekStart": ""
+}

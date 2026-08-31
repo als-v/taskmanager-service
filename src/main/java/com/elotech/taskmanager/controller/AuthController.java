@@ -1,11 +1,13 @@
 package com.elotech.taskmanager.controller;
 
 import com.elotech.taskmanager.domain.error.ApiProblem;
+import com.elotech.taskmanager.domain.error.UnauthorizedException;
 import com.elotech.taskmanager.domain.dto.request.auth.LoginRequest;
 import com.elotech.taskmanager.domain.dto.request.auth.RefreshRequest;
 import com.elotech.taskmanager.domain.dto.request.auth.SignUpRequest;
 import com.elotech.taskmanager.domain.dto.response.auth.AuthResponse;
 import com.elotech.taskmanager.domain.dto.response.auth.UserResponse;
+import com.elotech.taskmanager.logging.ApplicationEventLogger;
 import com.elotech.taskmanager.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -24,9 +26,11 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final ApplicationEventLogger eventLogger;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, ApplicationEventLogger eventLogger) {
         this.authService = authService;
+        this.eventLogger = eventLogger;
     }
 
     @PostMapping("/signup")
@@ -81,7 +85,9 @@ public class AuthController {
                                             }
                                             """)))
     public UserResponse signUp(@Valid @RequestBody SignUpRequest request) {
-        return authService.signUp(request);
+        UserResponse response = authService.signUp(request);
+        eventLogger.auth("USER_SIGNUP_SUCCESS", "success", response.id(), response.email());
+        return response;
     }
 
     @PostMapping("/login")
@@ -135,7 +141,14 @@ public class AuthController {
                                             }
                                             """)))
     public AuthResponse login(@Valid @RequestBody LoginRequest request) {
-        return authService.login(request);
+        try {
+            AuthResponse response = authService.login(request);
+            eventLogger.auth("LOGIN_SUCCESS", "success", response.user().id(), response.user().email());
+            return response;
+        } catch (UnauthorizedException e) {
+            eventLogger.auth("LOGIN_FAILURE", "failure", null, request.email());
+            throw e;
+        }
     }
 
     @PostMapping("/refresh")
@@ -218,7 +231,14 @@ public class AuthController {
                                             }
                                             """)))
     public AuthResponse refresh(@Valid @RequestBody RefreshRequest request) {
-        return authService.refresh(request);
+        try {
+            AuthResponse response = authService.refresh(request);
+            eventLogger.auth("REFRESH_SUCCESS", "success", response.user().id(), response.user().email());
+            return response;
+        } catch (UnauthorizedException e) {
+            eventLogger.auth("REFRESH_FAILURE", "failure", null, null);
+            throw e;
+        }
     }
 
     @PostMapping("/logout")
@@ -258,5 +278,6 @@ public class AuthController {
                                             """)))
     public void logout(@Valid @RequestBody RefreshRequest request) {
         authService.logout(request);
+        eventLogger.auth("LOGOUT", "success", null, null);
     }
 }

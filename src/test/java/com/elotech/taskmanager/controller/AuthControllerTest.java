@@ -6,6 +6,7 @@ import com.elotech.taskmanager.domain.dto.request.auth.RefreshRequest;
 import com.elotech.taskmanager.domain.dto.request.auth.SignUpRequest;
 import com.elotech.taskmanager.domain.dto.response.auth.UserResponse;
 import com.elotech.taskmanager.domain.error.ErrorMessages;
+import com.elotech.taskmanager.logging.ApplicationEventLogger;
 import com.elotech.taskmanager.service.AuthService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -37,6 +38,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private ApplicationEventLogger eventLogger;
 
     @Test
     void signUp_shouldReturn201WithUserResponse() throws Exception {

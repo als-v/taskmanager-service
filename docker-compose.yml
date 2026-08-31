@@ -94,6 +94,53 @@ services:
     networks:
       - taskmanager_network
 
+  loki:
+    image: grafana/loki:3.2.1
+    container_name: taskmanager-loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yml
+    ports:
+      - "${LOKI_PORT}:3100"
+    volumes:
+      - ./docker/loki/loki-config.yml:/etc/loki/local-config.yml:ro
+      - loki_data:/loki
+    networks:
+      - taskmanager_network
+
+  promtail:
+    image: grafana/promtail:3.2.1
+    container_name: taskmanager-promtail
+    restart: unless-stopped
+    command: -config.file=/etc/promtail/config.yml
+    volumes:
+      - ./docker/promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      loki:
+        condition: service_started
+    networks:
+      - taskmanager_network
+
+  grafana:
+    image: grafana/grafana:11.2.2
+    container_name: taskmanager-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+    ports:
+      - "${GRAFANA_PORT}:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      loki:
+        condition: service_started
+    networks:
+      - taskmanager_network
+
 networks:
   taskmanager_network:
     name: taskmanager_network
@@ -106,3 +153,5 @@ volumes:
   sonarqube_extensions:
   sonarqube_logs:
   jenkins_home:
+  loki_data:
+  grafana_data:
