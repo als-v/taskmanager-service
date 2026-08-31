@@ -1,0 +1,739 @@
+{
+  "info": {
+    "_postman_id": "37a55e92-4759-4f40-a372-909613296812",
+    "name": "tasks",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "8619752"
+  },
+  "item": [
+    {
+      "name": "/projects/:projectId/tasks",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.environment.set(\"task_id\", null);",
+              "",
+              "if (pm.response.code === 200) {",
+              "      const body = pm.response.json();",
+              "",
+              "    if (body.content.length > 0) {",
+              "        pm.environment.set(\"task_id\", body.content[0].id);",
+              "    }",
+              "  }"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{TASKMANAGER_API_URL}}/projects/{{project_id}}/tasks",
+          "host": [
+            "{{TASKMANAGER_API_URL}}"
+          ],
+          "path": [
+            "projects",
+            "{{project_id}}",
+            "tasks"
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "DONE",
+              "type": "text",
+              "disabled": true
+            },
+            {
+              "key": "priority",
+              "value": "HIGH",
+              "type": "text",
+              "disabled": true
+            },
+            {
+              "key": "assignee_id",
+              "value": "{{user_id}}",
+              "type": "text",
+              "disabled": true
+            },
+            {
+              "key": "unassigned",
+              "value": "true",
+              "type": "text",
+              "disabled": true
+            },
+            {
+              "key": "due_date_from",
+              "value": "2026-09-10T00:00:00",
+              "type": "text",
+              "disabled": true
+            },
+            {
+              "key": "due_date_to",
+              "value": "2026-09-11T23:59:59",
+              "type": "text",
+              "disabled": true
+            },
+            {
+              "key": "title",
+              "value": "Task #1",
+              "type": "text",
+              "disabled": true
+            },
+            {
+              "key": "description",
+              "value": "Lorem ipsum",
+              "type": "text",
+              "disabled": true
+            },
+            {
+              "key": "sort",
+              "value": "created_at, asc",
+              "type": "text",
+              "disabled": true
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/projects/:projectId/tasks/:id",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{TASKMANAGER_API_URL}}/projects/{{project_id}}/tasks/{{task_id}}",
+          "host": [
+            "{{TASKMANAGER_API_URL}}"
+          ],
+          "path": [
+            "projects",
+            "{{project_id}}",
+            "tasks",
+            "{{task_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/projects/:projectId/tasks",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.environment.set(\"task_id\", null);",
+              "",
+              "if (pm.response.code === 201) {",
+              "      const body = pm.response.json();",
+              "      pm.environment.set(\"task_id\", body.id);",
+              "  }"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"title\": \"Task #1\",\n    \"description\": \"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum nec urna lectus.\",\n    \"status\": \"TODO\",\n    \"priority\": \"LOW\",\n    \"due_date\": \"2026-09-10T23:59:59\",\n    \"assignee_id\": \"{{user_id}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{TASKMANAGER_API_URL}}/projects/{{project_id}}/tasks",
+          "host": [
+            "{{TASKMANAGER_API_URL}}"
+          ],
+          "path": [
+            "projects",
+            "{{project_id}}",
+            "tasks"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "cadastro padrão",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Task #1\",\n    \"description\": \"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum nec urna lectus.\",\n    \"status\": \"TODO\",\n    \"priority\": \"LOW\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{TASKMANAGER_API_URL}}/projects/{{project_id}}/tasks",
+              "host": [
+                "{{TASKMANAGER_API_URL}}"
+              ],
+              "path": [
+                "projects",
+                "{{project_id}}",
+                "tasks"
+              ]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "",
+          "header": [
+            {
+              "key": "Vary",
+              "value": "Origin"
+            },
+            {
+              "key": "Vary",
+              "value": "Access-Control-Request-Method"
+            },
+            {
+              "key": "Vary",
+              "value": "Access-Control-Request-Headers"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-XSS-Protection",
+              "value": "0"
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, no-store, max-age=0, must-revalidate"
+            },
+            {
+              "key": "Pragma",
+              "value": "no-cache"
+            },
+            {
+              "key": "Expires",
+              "value": "0"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Date",
+              "value": "Fri, 28 Aug 2026 17:47:45 GMT"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "cookie": [
+            {
+              "expires": "Invalid Date",
+              "domain": "",
+              "path": ""
+            }
+          ],
+          "body": "{\n    \"id\": \"a45b1d6b-77d4-42f0-abb2-490c6862d22b\",\n    \"project_id\": \"b21f019e-5e79-4ffb-b647-815791e9c64c\",\n    \"title\": \"Task #1\",\n    \"description\": \"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum nec urna lectus.\",\n    \"status\": \"TODO\",\n    \"priority\": \"LOW\",\n    \"assignee_id\": null,\n    \"due_date\": null,\n    \"created_at\": null,\n    \"updated_at\": null\n}"
+        },
+        {
+          "name": "cadastro com opcionais",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Task #1\",\n    \"description\": \"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum nec urna lectus.\",\n    \"status\": \"TODO\",\n    \"priority\": \"LOW\",\n    \"due_date\": \"2026-09-10T23:59:59\",\n    \"assignee_id\": \"{{user_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{TASKMANAGER_API_URL}}/projects/{{project_id}}/tasks",
+              "host": [
+                "{{TASKMANAGER_API_URL}}"
+              ],
+              "path": [
+                "projects",
+                "{{project_id}}",
+                "tasks"
+              ]
+            }
+          },
+          "status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+          "code": 422,
+          "_postman_previewlanguage": "",
+          "header": [
+            {
+              "key": "Vary",
+              "value": "Origin"
+            },
+            {
+              "key": "Vary",
+              "value": "Access-Control-Request-Method"
+            },
+            {
+              "key": "Vary",
+              "value": "Access-Control-Request-Headers"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-XSS-Protection",
+              "value": "0"
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, no-store, max-age=0, must-revalidate"
+            },
+            {
+              "key": "Pragma",
+              "value": "no-cache"
+            },
+            {
+              "key": "Expires",
+              "value": "0"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/problem+json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Date",
+              "value": "Fri, 28 Aug 2026 17:49:31 GMT"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "cookie": [
+            {
+              "expires": "Invalid Date",
+              "domain": "",
+              "path": ""
+            }
+          ],
+          "body": "{\n    \"status\": 422,\n    \"type\": \"about:blank\",\n    \"title\": \"error.task.assignee-not-member\",\n    \"detail\": \"Assignee must be a project member\",\n    \"instance\": \"/api/projects/b21f019e-5e79-4ffb-b647-815791e9c64c/tasks\",\n    \"code\": \"error.task.assignee-not-member\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "/projects/:projectId/tasks/:id",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"title\": \"Task editada\",\n    \"description\": \"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum nec urna lectus.\",\n    \"status\": \"IN_PROGRESS\",\n    \"priority\": \"LOW\",\n    \"due_date\": \"2026-09-10T23:59:59\",\n    \"assignee_id\": \"{{user_id}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{TASKMANAGER_API_URL}}/projects/{{project_id}}/tasks/{{task_id}}",
+          "host": [
+            "{{TASKMANAGER_API_URL}}"
+          ],
+          "path": [
+            "projects",
+            "{{project_id}}",
+            "tasks",
+            "{{task_id}}"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "update padrão",
+          "originalRequest": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Task editada\",\n    \"description\": \"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum nec urna lectus.\",\n    \"status\": \"IN_PROGRESS\",\n    \"priority\": \"LOW\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{TASKMANAGER_API_URL}}/projects/{{project_id}}/tasks/{{task_id}}",
+              "host": [
+                "{{TASKMANAGER_API_URL}}"
+              ],
+              "path": [
+                "projects",
+                "{{project_id}}",
+                "tasks",
+                "{{task_id}}"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "",
+          "header": [
+            {
+              "key": "Vary",
+              "value": "Origin"
+            },
+            {
+              "key": "Vary",
+              "value": "Access-Control-Request-Method"
+            },
+            {
+              "key": "Vary",
+              "value": "Access-Control-Request-Headers"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-XSS-Protection",
+              "value": "0"
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, no-store, max-age=0, must-revalidate"
+            },
+            {
+              "key": "Pragma",
+              "value": "no-cache"
+            },
+            {
+              "key": "Expires",
+              "value": "0"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Date",
+              "value": "Fri, 28 Aug 2026 17:51:50 GMT"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "cookie": [
+            {
+              "expires": "Invalid Date",
+              "domain": "",
+              "path": ""
+            }
+          ],
+          "body": "{\n    \"id\": \"a45b1d6b-77d4-42f0-abb2-490c6862d22b\",\n    \"project_id\": \"b21f019e-5e79-4ffb-b647-815791e9c64c\",\n    \"title\": \"Task editada\",\n    \"description\": \"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum nec urna lectus.\",\n    \"status\": \"IN_PROGRESS\",\n    \"priority\": \"LOW\",\n    \"assignee_id\": null,\n    \"due_date\": null,\n    \"created_at\": \"2026-08-28T14:47:45.754482\",\n    \"updated_at\": \"2026-08-28T14:47:45.754508\"\n}"
+        },
+        {
+          "name": "update com opcionais",
+          "originalRequest": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Task editada\",\n    \"description\": \"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum nec urna lectus.\",\n    \"status\": \"IN_PROGRESS\",\n    \"priority\": \"LOW\",\n    \"due_date\": \"2026-09-10T23:59:59\",\n    \"assignee_id\": \"{{user_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{TASKMANAGER_API_URL}}/projects/{{project_id}}/tasks/{{task_id}}",
+              "host": [
+                "{{TASKMANAGER_API_URL}}"
+              ],
+              "path": [
+                "projects",
+                "{{project_id}}",
+                "tasks",
+                "{{task_id}}"
+              ]
+            }
+          },
+          "status": "Unauthorized",
+          "code": 401,
+          "_postman_previewlanguage": "",
+          "header": [
+            {
+              "key": "Vary",
+              "value": "Origin"
+            },
+            {
+              "key": "Vary",
+              "value": "Access-Control-Request-Method"
+            },
+            {
+              "key": "Vary",
+              "value": "Access-Control-Request-Headers"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-XSS-Protection",
+              "value": "0"
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, no-store, max-age=0, must-revalidate"
+            },
+            {
+              "key": "Pragma",
+              "value": "no-cache"
+            },
+            {
+              "key": "Expires",
+              "value": "0"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json;charset=ISO-8859-1"
+            },
+            {
+              "key": "Content-Length",
+              "value": "236"
+            },
+            {
+              "key": "Date",
+              "value": "Fri, 28 Aug 2026 17:53:04 GMT"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "cookie": [
+            {
+              "expires": "Invalid Date",
+              "domain": "",
+              "path": ""
+            }
+          ],
+          "body": "{\n    \"status\": 401,\n    \"type\": \"about:blank\",\n    \"title\": \"error.auth.token-expired\",\n    \"detail\": \"Token expired\",\n    \"instance\": \"/api/projects/b21f019e-5e79-4ffb-b647-815791e9c64c/tasks/a45b1d6b-77d4-42f0-abb2-490c6862d22b\",\n    \"code\": \"error.auth.token-expired\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "/projects/:projectId/tasks/:id",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{TASKMANAGER_API_URL}}/projects/{{project_id}}/tasks/{{task_id}}",
+          "host": [
+            "{{TASKMANAGER_API_URL}}"
+          ],
+          "path": [
+            "projects",
+            "{{project_id}}",
+            "tasks",
+            "{{task_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/projects/:projectId/tasks/:id/status",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n   \"status\": \"IN_PROGRESS\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{TASKMANAGER_API_URL}}/projects/{{project_id}}/tasks/{{task_id}}/status",
+          "host": [
+            "{{TASKMANAGER_API_URL}}"
+          ],
+          "path": [
+            "projects",
+            "{{project_id}}",
+            "tasks",
+            "{{task_id}}",
+            "status"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/projects/:projectId/tasks/:id/assignee",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n   \"assignee_id\": \"{{user_id}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{TASKMANAGER_API_URL}}/projects/{{project_id}}/tasks/{{task_id}}/assignee",
+          "host": [
+            "{{TASKMANAGER_API_URL}}"
+          ],
+          "path": [
+            "projects",
+            "{{project_id}}",
+            "tasks",
+            "{{task_id}}",
+            "assignee"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

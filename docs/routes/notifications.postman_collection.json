@@ -1,0 +1,120 @@
+{
+  "info": {
+    "_postman_id": "00b75c23-9045-4f36-b595-fafa926b7862",
+    "name": "notifications",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "8619752"
+  },
+  "item": [
+    {
+      "name": "/",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.environment.set(\"notification_id\", null);",
+              "",
+              "if (pm.response.code === 200) {",
+              "      const body = pm.response.json();",
+              "",
+              "    if (body.content.length > 0) {",
+              "        pm.environment.set(\"notification_id\", body.content[0].id);",
+              "    }",
+              "  }"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{TASKMANAGER_API_URL}}/notifications",
+          "host": [
+            "{{TASKMANAGER_API_URL}}"
+          ],
+          "path": [
+            "notifications"
+          ],
+          "query": [
+            {
+              "key": "unread",
+              "value": "true",
+              "type": "text",
+              "disabled": true
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/:id/read",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{TASKMANAGER_API_URL}}/notifications/{{notification_id}}/read",
+          "host": [
+            "{{TASKMANAGER_API_URL}}"
+          ],
+          "path": [
+            "notifications",
+            "{{notification_id}}",
+            "read"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

@@ -1,0 +1,423 @@
+{
+  "info": {
+    "_postman_id": "4c4611ae-e9e2-4978-8035-cd059f36c900",
+    "name": "projects",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "8619752"
+  },
+  "item": [
+    {
+      "name": "/",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.environment.set(\"project_id\", null);",
+              "",
+              "if (pm.response.code === 200) {",
+              "      const body = pm.response.json();",
+              "",
+              "    if (body.content.length > 0) {",
+              "        pm.environment.set(\"project_id\", body.content[0].id);",
+              "    }",
+              "  }"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{TASKMANAGER_API_URL}}/projects",
+          "host": [
+            "{{TASKMANAGER_API_URL}}"
+          ],
+          "path": [
+            "projects"
+          ],
+          "query": [
+            {
+              "key": "name",
+              "value": "Projeto",
+              "type": "text",
+              "disabled": true
+            },
+            {
+              "key": "description",
+              "value": "Lorem ipsum dolor sit amet",
+              "type": "text",
+              "disabled": true
+            },
+            {
+              "key": "sort",
+              "value": "created_at, asc",
+              "type": "text",
+              "disabled": true
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/:id",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{TASKMANAGER_API_URL}}/projects/{{project_id}}",
+          "host": [
+            "{{TASKMANAGER_API_URL}}"
+          ],
+          "path": [
+            "projects",
+            "{{project_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/:id",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"Nome Editado\",\n    \"description\": \"Descricao Editada\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{TASKMANAGER_API_URL}}/projects/{{project_id}}",
+          "host": [
+            "{{TASKMANAGER_API_URL}}"
+          ],
+          "path": [
+            "projects",
+            "{{project_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.environment.set(\"project_id\", null);",
+              "",
+              "if (pm.response.code === 201) {",
+              "      const body = pm.response.json();",
+              "      pm.environment.set(\"project_id\", body.id);",
+              "  }"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"Projeto #1\",\n    \"description\": \"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum nec urna lectus.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{TASKMANAGER_API_URL}}/projects",
+          "host": [
+            "{{TASKMANAGER_API_URL}}"
+          ],
+          "path": [
+            "projects"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.environment.set(\"project_id\", null);"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{TASKMANAGER_API_URL}}/projects/{{project_id}}",
+          "host": [
+            "{{TASKMANAGER_API_URL}}"
+          ],
+          "path": [
+            "projects",
+            "{{project_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/:id/members",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.environment.set(\"member_id\", null);",
+              "",
+              "if (pm.response.code === 200) {",
+              "      const body = pm.response.json();",
+              "",
+              "    if (body.content.length > 0) {",
+              "        pm.environment.set(\"member_id\", body.content[0].id);",
+              "    }",
+              "  }"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{TASKMANAGER_API_URL}}/projects/{{project_id}}/members",
+          "host": [
+            "{{TASKMANAGER_API_URL}}"
+          ],
+          "path": [
+            "projects",
+            "{{project_id}}",
+            "members"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/:id/members",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.environment.set(\"member_id\", null);",
+              "",
+              "if (pm.response.code === 201) {",
+              "      const body = pm.response.json();",
+              "",
+              "    if (body.content.length > 0) {",
+              "        pm.environment.set(\"member_id\", body.content[0].id);",
+              "    }",
+              "  }"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"user_ids\": [\n        \"{{user_id}}\"\n    ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{TASKMANAGER_API_URL}}/projects/{{project_id}}/members",
+          "host": [
+            "{{TASKMANAGER_API_URL}}"
+          ],
+          "path": [
+            "projects",
+            "{{project_id}}",
+            "members"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/:id/logs",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.environment.set(\"member_id\", null);",
+              "",
+              "if (pm.response.code === 200) {",
+              "      const body = pm.response.json();",
+              "",
+              "    if (body.content.length > 0) {",
+              "        pm.environment.set(\"member_id\", body.content[0].id);",
+              "    }",
+              "  }"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{TASKMANAGER_API_URL}}/projects/{{project_id}}/logs",
+          "host": [
+            "{{TASKMANAGER_API_URL}}"
+          ],
+          "path": [
+            "projects",
+            "{{project_id}}",
+            "logs"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
