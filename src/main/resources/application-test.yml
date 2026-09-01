@@ -16,3 +16,5 @@ app:
     expiration-ms: 900000
     refresh-secret: test-refresh-secret
     refresh-expiration-ms: 604800000
+  cors:
+    allowed-origins: http://localhost:4200,http://localhost:4210
