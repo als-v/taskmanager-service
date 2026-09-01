@@ -1,12 +1,14 @@
 package com.elotech.taskmanager.security;
 
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.UUID;
 
 @Component
+@Profile("!test")
 public class RedisRefreshTokenStore implements RefreshTokenStore {
 
     private static final String KEY_PREFIX = "refresh:";
