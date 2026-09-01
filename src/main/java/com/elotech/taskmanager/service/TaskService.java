@@ -54,7 +54,7 @@ public class TaskService {
     private static final Map<String, String> LIST_SORT_FIELDS = Map.of(
             "created_at", "createdAt",
             "due_date", "dueDate",
-            "priority", "priority",
+            "priority", "priorityRank",
             "status", "status"
     );
 

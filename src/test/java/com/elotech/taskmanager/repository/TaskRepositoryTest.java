@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
@@ -202,6 +203,56 @@ class TaskRepositoryTest {
         assertThat(response.getContent())
                 .extracting(Task::getId)
                 .containsExactly(assigned.getId());
+    }
+
+    @Test
+    void findAllByCriteriaOrdersByPriorityAscendingUsingSemanticHierarchy() {
+        User owner = userRepository.save(user("Owner", "owner-task-priority-sort-asc@example.com"));
+        Project project = projectRepository.save(project(owner.getId()));
+
+        Task critical = task(project.getId(), owner.getId(), "Task critical", null, TaskStatus.TODO, Priority.CRITICAL, null, null);
+        Task low = task(project.getId(), owner.getId(), "Task low", null, TaskStatus.TODO, Priority.LOW, null, null);
+        Task high = task(project.getId(), owner.getId(), "Task high", null, TaskStatus.TODO, Priority.HIGH, null, null);
+        Task medium = task(project.getId(), owner.getId(), "Task medium", null, TaskStatus.TODO, Priority.MEDIUM, null, null);
+
+        taskRepository.save(critical);
+        taskRepository.save(low);
+        taskRepository.save(high);
+        taskRepository.save(medium);
+
+        Page<Task> response = taskRepository.findAll(
+                TaskSpecifications.byCriteria(project.getId(), new TaskListCriteria(null, null, null, null, null, null, null, null, null, null)),
+                PageRequest.of(0, 20, Sort.by(Sort.Direction.ASC, "priorityRank"))
+        );
+
+        assertThat(response.getContent())
+                .extracting(Task::getPriority)
+                .containsExactly(Priority.LOW, Priority.MEDIUM, Priority.HIGH, Priority.CRITICAL);
+    }
+
+    @Test
+    void findAllByCriteriaOrdersByPriorityDescendingUsingSemanticHierarchy() {
+        User owner = userRepository.save(user("Owner", "owner-task-priority-sort-desc@example.com"));
+        Project project = projectRepository.save(project(owner.getId()));
+
+        Task medium = task(project.getId(), owner.getId(), "Task medium", null, TaskStatus.TODO, Priority.MEDIUM, null, null);
+        Task critical = task(project.getId(), owner.getId(), "Task critical", null, TaskStatus.TODO, Priority.CRITICAL, null, null);
+        Task low = task(project.getId(), owner.getId(), "Task low", null, TaskStatus.TODO, Priority.LOW, null, null);
+        Task high = task(project.getId(), owner.getId(), "Task high", null, TaskStatus.TODO, Priority.HIGH, null, null);
+
+        taskRepository.save(medium);
+        taskRepository.save(critical);
+        taskRepository.save(low);
+        taskRepository.save(high);
+
+        Page<Task> response = taskRepository.findAll(
+                TaskSpecifications.byCriteria(project.getId(), new TaskListCriteria(null, null, null, null, null, null, null, null, null, null)),
+                PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "priorityRank"))
+        );
+
+        assertThat(response.getContent())
+                .extracting(Task::getPriority)
+                .containsExactly(Priority.CRITICAL, Priority.HIGH, Priority.MEDIUM, Priority.LOW);
     }
 
     private User user(String name, String email) {

@@ -11,12 +11,14 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Formula;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
@@ -55,6 +57,15 @@ public class Task {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Priority priority;
+
+    @Formula("(case priority" +
+            " when 'LOW' then 0" +
+            " when 'MEDIUM' then 1" +
+            " when 'HIGH' then 2" +
+            " when 'CRITICAL' then 3" +
+            " else -1 end)")
+    @Setter(AccessLevel.NONE)
+    private Integer priorityRank;
 
     @Column(name = "user_id")
     private UUID userId;
