@@ -734,6 +734,46 @@
         }
       },
       "response": []
+    },
+    {
+      "name": "/projects/:projectId/tasks/:id/due-date",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n   \"due_date\": \"2026-09-10T23:59:59\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{TASKMANAGER_API_URL}}/projects/{{project_id}}/tasks/{{task_id}}/due-date",
+          "host": [
+            "{{TASKMANAGER_API_URL}}"
+          ],
+          "path": [
+            "projects",
+            "{{project_id}}",
+            "tasks",
+            "{{task_id}}",
+            "due-date"
+          ]
+        }
+      },
+      "response": []
     }
   ]
 }
