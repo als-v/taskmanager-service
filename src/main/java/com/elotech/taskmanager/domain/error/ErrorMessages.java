@@ -24,7 +24,6 @@ public final class ErrorMessages {
     public static final String TASK_DONE_TO_TODO_CODE = "error.task.done-to-todo";
     public static final String TASK_CRITICAL_DONE_ADMIN_REQUIRED_CODE = "error.task.critical-done-admin-required";
     public static final String TASK_WIP_LIMIT_EXCEEDED_CODE = "error.task.wip-limit-exceeded";
-    public static final String TASK_DELETE_ADMIN_REQUIRED_CODE = "error.task.delete-admin-required";
     public static final String NOTIFICATION_NOT_FOUND_CODE = "error.notification.not-found";
 
     public static final String PAGINATION_PAGE_INVALID_CODE = "error.pagination.page-invalid";
@@ -67,7 +66,6 @@ public final class ErrorMessages {
     public static final String TASK_DONE_TO_TODO_MESSAGE = "Done tasks cannot return to todo";
     public static final String TASK_CRITICAL_DONE_ADMIN_REQUIRED_MESSAGE = "Only project admins can complete critical tasks";
     public static final String TASK_WIP_LIMIT_EXCEEDED_MESSAGE = "Assignee has reached the in-progress task limit for this project";
-    public static final String TASK_DELETE_ADMIN_REQUIRED_MESSAGE = "Only project admins can delete tasks";
     public static final String NOTIFICATION_NOT_FOUND_MESSAGE = "Notification not found";
 
     public static final String PAGINATION_PAGE_INVALID_MESSAGE = "Page must be greater than or equal to zero";

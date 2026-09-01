@@ -12,7 +12,6 @@ import com.elotech.taskmanager.domain.enumeration.Priority;
 import com.elotech.taskmanager.domain.enumeration.TaskStatus;
 import com.elotech.taskmanager.domain.error.BusinessException;
 import com.elotech.taskmanager.domain.error.ErrorMessages;
-import com.elotech.taskmanager.domain.error.ForbiddenException;
 import com.elotech.taskmanager.domain.error.NotFoundException;
 import com.elotech.taskmanager.domain.error.UnauthorizedException;
 import com.elotech.taskmanager.domain.criteria.TaskListCriteria;
@@ -342,21 +341,6 @@ class TaskControllerTest {
                 .andExpect(status().isNoContent());
 
         verify(taskService).delete(projectId, taskId);
-    }
-
-    @Test
-    void mapsDeleteForbiddenTo403() throws Exception {
-        UUID projectId = UUID.randomUUID();
-        UUID taskId = UUID.randomUUID();
-        org.mockito.Mockito.doThrow(new ForbiddenException(
-                        ErrorMessages.TASK_DELETE_ADMIN_REQUIRED_CODE,
-                        ErrorMessages.TASK_DELETE_ADMIN_REQUIRED_MESSAGE
-                ))
-                .when(taskService).delete(projectId, taskId);
-
-        mockMvc.perform(delete("/api/projects/{projectId}/tasks/{taskId}", projectId, taskId))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code").value(ErrorMessages.TASK_DELETE_ADMIN_REQUIRED_CODE));
     }
 
     private TaskResponse taskResponse(UUID projectId, UUID taskId, UUID assigneeId) {

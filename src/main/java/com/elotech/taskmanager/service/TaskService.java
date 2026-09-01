@@ -23,7 +23,6 @@ import com.elotech.taskmanager.domain.error.BadRequestException;
 import com.elotech.taskmanager.domain.error.BusinessException;
 import com.elotech.taskmanager.domain.error.ErrorMessages;
 import com.elotech.taskmanager.pagination.PageRequests;
-import com.elotech.taskmanager.domain.error.ForbiddenException;
 import com.elotech.taskmanager.domain.error.NotFoundException;
 import com.elotech.taskmanager.logging.ApplicationEventLogger;
 import com.elotech.taskmanager.policy.ProjectAccessPolicy;
@@ -230,11 +229,6 @@ public class TaskService {
     public void delete(UUID projectId, UUID taskId) {
         User currentUser = currentUserService.getCurrentUser();
         projectAccessPolicy.requireMember(projectId, currentUser.getId());
-        MemberRole role = projectAccessPolicy.requireRole(projectId, currentUser.getId());
-
-        if (role != MemberRole.ADMIN) {
-            throw new ForbiddenException(ErrorMessages.TASK_DELETE_ADMIN_REQUIRED_CODE, ErrorMessages.TASK_DELETE_ADMIN_REQUIRED_MESSAGE);
-        }
 
         Task task = requireTaskInProject(projectId, taskId);
         saveAudit(task, currentUser.getId(), AuditAction.TASK_DELETED, null, null);

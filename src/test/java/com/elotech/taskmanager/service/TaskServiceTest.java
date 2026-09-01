@@ -22,7 +22,6 @@ import com.elotech.taskmanager.domain.enumeration.Priority;
 import com.elotech.taskmanager.domain.enumeration.TaskStatus;
 import com.elotech.taskmanager.domain.error.BadRequestException;
 import com.elotech.taskmanager.domain.error.BusinessException;
-import com.elotech.taskmanager.domain.error.ForbiddenException;
 import com.elotech.taskmanager.domain.error.NotFoundException;
 import com.elotech.taskmanager.logging.ApplicationEventLogger;
 import com.elotech.taskmanager.policy.ProjectAccessPolicy;
@@ -464,11 +463,10 @@ class TaskServiceTest {
     }
 
     @Test
-    void deletesTaskForAdminAndRegistersAudit() {
+    void deletesTaskForAnyProjectMemberAndRegistersAudit() {
         Task task = task(TaskStatus.TODO, Priority.HIGH, null);
         given(currentUserService.getCurrentUser()).willReturn(currentUser);
         given(projectAccessPolicy.requireMember(projectId, currentUser.getId())).willReturn(project());
-        given(projectAccessPolicy.requireRole(projectId, currentUser.getId())).willReturn(MemberRole.ADMIN);
         given(taskRepository.findById(task.getId())).willReturn(Optional.of(task));
 
         taskService.delete(projectId, task.getId());
@@ -485,25 +483,12 @@ class TaskServiceTest {
         task.setDeletedAt(LocalDateTime.now());
         given(currentUserService.getCurrentUser()).willReturn(currentUser);
         given(projectAccessPolicy.requireMember(projectId, currentUser.getId())).willReturn(project());
-        given(projectAccessPolicy.requireRole(projectId, currentUser.getId())).willReturn(MemberRole.ADMIN);
         given(taskRepository.findById(task.getId())).willReturn(Optional.of(task));
 
         UUID taskId = task.getId();
 
         assertThatThrownBy(() -> taskService.delete(projectId, taskId))
                 .isInstanceOf(NotFoundException.class);
-    }
-
-    @Test
-    void deniesDeleteForMember() {
-        given(currentUserService.getCurrentUser()).willReturn(currentUser);
-        given(projectAccessPolicy.requireMember(projectId, currentUser.getId())).willReturn(project());
-        given(projectAccessPolicy.requireRole(projectId, currentUser.getId())).willReturn(MemberRole.MEMBER);
-
-        UUID taskId = UUID.randomUUID();
-
-        assertThatThrownBy(() -> taskService.delete(projectId, taskId))
-                .isInstanceOf(ForbiddenException.class);
     }
 
     @Test

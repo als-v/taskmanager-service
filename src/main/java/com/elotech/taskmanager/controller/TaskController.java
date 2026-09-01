@@ -247,20 +247,10 @@ public class TaskController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(
             summary = "Deletar task",
-            description = "Remove uma task do projeto. Somente membros `ADMIN` do projeto podem deletar tasks."
+            description = "Remove uma task do projeto quando o usuário autenticado é membro `ADMIN` ou `MEMBER` do projeto."
     )
     @ApiResponse(responseCode = "204", description = "Task deletada")
     @ApiResponse(responseCode = "401", description = "Access token ausente, expirado ou inválido", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
-    @ApiResponse(responseCode = "403", description = "Usuário autenticado é membro, mas não é ADMIN do projeto", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class), examples = @ExampleObject(name = "delete-admin-required", value = """
-                    {
-                        "status": 403,
-                        "type": "about:blank",
-                        "title": "error.task.delete-admin-required",
-                        "detail": "Only project admins can delete tasks",
-                        "instance": "/api/projects/8d1c1dc4-336c-4ce4-82ac-bffb82c94f5c/tasks/2f2a9a6b-4dc8-45c0-9a3f-8e7d36f0ad91",
-                        "code": "error.task.delete-admin-required"
-                    }
-            """)))
     @ApiResponse(responseCode = "404", description = "Projeto ou task inexistente/inacessível", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiProblem.class)))
     public void delete(@PathVariable UUID projectId, @PathVariable UUID taskId) {
         taskService.delete(projectId, taskId);
